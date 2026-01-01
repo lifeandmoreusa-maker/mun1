@@ -3,70 +3,77 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>로컬링크(LocalLink) 최종 플랫폼</title>
-    <!-- 도구 모음 -->
+    <title>로컬링크 파트너 - 데이터 보상 시스템</title>
+    <!-- Tailwind CSS (스타일) -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- React & ReactDOM (엔진) -->
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <!-- Babel (브라우저에서 JSX 해석) -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <!-- Firebase (CDN 버전) -->
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
-    <!-- 아이콘 (Lucide) -->
-    <script src="https://unpkg.com/lucide@latest"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;700;900&display=swap');
-        body { font-family: 'Noto Sans KR', sans-serif; }
-        .animate-in { animation: fadeIn 0.5s ease-out; }
+        @import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@400;600;700;900&display=swap');
+        body { font-family: 'Pretendard', sans-serif; background-color: #f8fafc; }
+        .animate-fade-in { animation: fadeIn 0.6s ease-out forwards; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .spinner { animation: spin 1s linear infinite; }
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        .break-keep { word-break: keep-all; }
     </style>
 </head>
-<body class="bg-slate-50">
+<body>
     <div id="root"></div>
 
+    <!-- Firebase SDK 모듈 로드 -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, serverTimestamp, onSnapshot, doc, getDoc, setDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        window.FirebaseSDK = {
+            initializeApp, getAuth, signInAnonymously, onAuthStateChanged,
+            getFirestore, collection, addDoc, serverTimestamp, onSnapshot, doc, getDoc, setDoc, updateDoc
+        };
+    </script>
+
+    <!-- 메인 앱 로직 -->
     <script type="text/babel">
-        // --- [1. 파이어베이스 설정: 본인의 정보를 여기에 넣으세요] ---
-        const firebaseConfig = {
-  apiKey: "AIzaSyBAngyJvkAQ5lbRNH3I5PI4TtPH1CFY7fA",
-  authDomain: "link-final-a7d96.firebaseapp.com",
-  projectId: "link-final-a7d96",
-  storageBucket: "link-final-a7d96.firebasestorage.app",
-  messagingSenderId: "764608459792",
-  appId: "1:764608459792:web:2bf90ae95419c5d32c4695",
-  measurementId: "G-TDS9MCRX70"
-};
-
-        // 초기화
-        firebase.initializeApp(firebaseConfig);
-        const auth = firebase.auth();
-        const db = firebase.firestore();
-        const appId = "locallink-final-v3";
-
         const { useState, useEffect, useMemo } = React;
 
-        // 아이콘 컴포넌트 (Lucide를 React용으로 변환)
-        const Icon = ({ name, size = 20, className = "" }) => {
-            useEffect(() => { lucide.createIcons(); }, [name]);
-            return <i data-lucide={name} style={{ width: size, height: size }} className={className}></i>;
+        // 아이콘 컴포넌트 (SVG 인라인 방식 - removeChild 오류 방지)
+        const Icon = ({ name, size = 24, className = "" }) => {
+            const icons = {
+                "loader": <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="spinner"><path d="M21 12a9 9 0 1 1-6.219-8.56" /></svg>,
+                "database": <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5V19A9 3 0 0 0 21 19V5"/><path d="M3 12A9 3 0 0 0 21 12"/></svg>,
+                "target": <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>,
+                "gem": <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 3h12l4 6-10 12L2 9Z"/><path d="M11 3 8 9l4 12 4-12-3-6"/><path d="M2 9h20"/></svg>,
+                "chevron-right": <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>,
+                "arrow-left": <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>,
+                "check": <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5"/></svg>,
+                "send": <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>,
+                "shield": <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/><path d="m9 12 2 2 4-4"/></svg>,
+                "download": <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
+            };
+            return <span className={`inline-block ${className}`} style={{ width: size, height: size }}>{icons[name] || null}</span>;
         };
 
-        // --- [2. 텍스트 설정] ---
+        // --- [텍스트 리소스 정의] ---
         const STRINGS = {
             common: { participation: "96.8%", maxReward: "4.9만 포인트", rewardNote: "※ 대면 실검증 시 제공" },
             general: {
                 heroTitle: "우리 사장님이 직접 드리는 데이터 보상",
                 heroSub: "로컬링크 파트너 내방 고객을 위한 데이터 보상 혜택 시스템! 고객님의 라이프 지표를 데이터로 공급하고 최대 4.9만 포인트 리워드를 받으세요.",
                 ownerLabel: "사장님",
-                thanks: "고객님의 소중한 데이터도 정당한 자산이 되어야 합니다. 사장인 제가 보증하는 로컬링크의 투명한 분석을 통해서 전문가를 통한 본인 데이터 자산의 가치를 발견하고, 새로운 자산의 가치를 창출하시길 바랍니다.",
+                thanks: "고객님의 소중한 데이터도 정당한 자산이 되어야 합니다. 사장인 제가 보증하는 로컬링크의 투명한 분석을 통해서 전문가를 통한 본인데이터 자산의 가치를 발견하고, 새로운 자산의 가치를 창출하시길 바랍니다.",
                 successMsg: "배정된 분석 전문가와의 대면 검증 후 플랫폼에서 약속된 보상을 사장님을 통해서 전달해 드립니다.(상품권, 리워드)"
             },
             medical: {
                 heroTitle: "우리 원장님이 준비한 데이터 보상 시스템",
                 heroSub: "로컬링크 파트너 내방 고객을 위해 기다리시는 동안 데이터 보상 혜택 시스템. 고객님의 라이프 지표를 데이터로 공급하고 최대 4.9만 포인트 리워드로 받으세요.",
-                legalNotice: "본 프로그램은 의료법 및 금융소비자보호법을 준수합니다. 제공되는 보상은 진료나 조제, 금융상품 가입의 대가가 아닌 데이터 가치 분석에 따른 정당한 정보 이용료입니다.",
+                legalNotice: "모든 것은 플랫폼이 데이터를 판매하며, 리워드 중간 전달자 역할에 대한 댓가입니다. 본 프로그램은 의료법 및 금융소비자보호법을 준수합니다. 제공되는 보상은 진료나 조제, 금융상품 가입의 대가가 아닌 데이터 가치 분석에 따른 정당한 정보 이용료입니다.",
                 ownerLabel: "원장님",
-                thanks: "고객님의 소중한 데이터도 정당한 자산이 되어야 합니다. 원장님인 제가 보증하는 로컬링크의 투명한 분석을 통해 본인 데이터 자산의 가치를 발견하시길 바랍니다. 지역 사회의 데이터 주권 보호를 위해 함께해주셔서 감사합니다. * 본 안내는 의료 서비스 및 조제와 무관한 외부 데이터 제휴 프로그램입니다.",
+                thanks: "고객님의 소중한 데이터도 정당한 자산이 되어야 합니다. 원장님인 제가 보증하는 로컬링크의 투명한 분석을 통해 본인 데이터 자산의 가치를 발견하시길 바랍니다. 지역 사회의 데이터 주권 보호를 위해 함께해주셔서 감사합니다.",
+                medicalNote: "* 본 안내는 의료 서비스 및 조제와 무관한 외부 데이터 제휴 프로그램입니다.",
                 successMsg: "배정된 분석 전문가와의 대면 검증 후 플랫폼에서 약속된 보상을 직접 전송해 드립니다."
             }
         };
@@ -77,177 +84,350 @@
         };
 
         function App() {
-            const [view, setView] = useState('survey');
+            const [view, setView] = useState('survey'); 
             const [step, setStep] = useState(0);
-            const [tier, setTier] = useState(null);
+            const [tier, setTier] = useState(null); // standard | premium
+            const [user, setUser] = useState(null);
+            const [isLoading, setIsLoading] = useState(true);
             const [isAdminAuth, setIsAdminAuth] = useState(false);
             const [pw, setPw] = useState("");
-            const [isLoading, setIsLoading] = useState(true);
             const [leads, setLeads] = useState([]);
-            const [activeTab, setActiveTab] = useState("list");
             
+            // 관리자 설정값
             const [config, setConfig] = useState({
-                merchantId: "default", merchantName: "로컬링크 파트너", themeType: "general", 
-                marketerName: "본사 직영", stdPrice: 120000, prePrice: 200000, stdReward: 25000, preReward: 49000
+                merchantId: "default",
+                merchantName: "로컬링크 파트너",
+                themeType: "general", // general | medical
+                marketerName: "본사",
+                stdPrice: 120000,
+                prePrice: 200000,
+                stdReward: 25000,
+                preReward: 49000
             });
-            
+
             const [formData, setFormData] = useState({ name: "", birth: "", phone: "", region: "", category: "", interest: "" });
-            const [agreed, setAgreed] = useState({ collect: false, third: false, contract: false });
-            
+            const [agreed, setAgreed] = useState({ collect: false, contract: false });
+
+            const appId = typeof __app_id !== 'undefined' ? __app_id : 'locallink-final-v1';
             const theme = THEMES[config.themeType] || THEMES.general;
             const texts = theme.isMedical ? STRINGS.medical : STRINGS.general;
 
             useEffect(() => {
                 const init = async () => {
-                    await auth.signInAnonymously();
+                    if (!window.FirebaseSDK) return setTimeout(init, 100);
+                    const { initializeApp, getAuth, signInAnonymously, onAuthStateChanged, getFirestore, doc, getDoc } = window.FirebaseSDK;
+                    const app = initializeApp(firebaseConfig);
+                    const auth = getAuth(app);
+                    const db = getFirestore(app);
+                    window.db = db;
+
+                    await signInAnonymously(auth);
+                    
                     const params = new URLSearchParams(window.location.search);
                     const mid = params.get('id');
                     if (mid) {
-                        const snap = await db.collection('artifacts').doc(appId).collection('public').doc('merchants').collection('data').doc(mid).get();
-                        if (snap.exists) setConfig(prev => ({ ...prev, ...snap.data() }));
+                        const snap = await getDoc(doc(db, 'artifacts', appId, 'public', 'data', 'merchants', mid));
+                        if (snap.exists()) setConfig(prev => ({ ...prev, ...snap.data() }));
                     }
                     setIsLoading(false);
+                    onAuthStateChanged(auth, setUser);
                 };
                 init();
             }, []);
 
-            useEffect(() => {
-                if (view === 'admin' && isAdminAuth) {
-                    const unsub = db.collection('artifacts').doc(appId).collection('public').doc('leads').collection('data')
-                        .onSnapshot(snap => {
-                            const data = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                            setLeads(data.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0)));
-                        });
-                    return unsub;
-                }
-            }, [view, isAdminAuth]);
+            const updateForm = (key, val) => setFormData(prev => ({ ...prev, [key]: val }));
 
             const handleSubmit = async () => {
-                if (!agreed.collect || !agreed.third || !agreed.contract) return alert("필수 동의가 필요합니다.");
+                if (!agreed.collect || !agreed.contract) return alert("필수 동의 항목에 체크해주세요.");
+                if (!formData.name || !formData.phone || !formData.birth || !formData.region) return alert("정보를 모두 입력해주세요.");
+
                 setIsLoading(true);
+                const { collection, addDoc, serverTimestamp } = window.FirebaseSDK;
                 try {
-                    await db.collection('artifacts').doc(appId).collection('public').doc('leads').collection('data').add({
-                        ...formData, ...config, tier, 
-                        salePrice: tier === 'premium' ? config.prePrice : config.stdPrice,
+                    await addDoc(collection(window.db, 'artifacts', appId, 'public', 'data', 'leads'), {
+                        ...formData,
+                        merchantId: config.merchantId,
+                        merchantName: config.merchantName,
+                        marketerName: config.marketerName,
+                        themeType: config.themeType,
+                        tier: tier,
                         rewardAmount: tier === 'premium' ? config.preReward : config.stdReward,
-                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                        createdAt: serverTimestamp()
                     });
                     setStep(3);
-                } catch (e) { alert("저장 실패"); }
-                setIsLoading(false);
+                } catch (e) {
+                    alert("전송 중 오류가 발생했습니다.");
+                } finally {
+                    setIsLoading(false);
+                }
             };
 
-            if (isLoading && step !== 3) return <div className="flex items-center justify-center h-screen bg-white font-bold text-slate-300 animate-pulse">SYSTEM LOADING...</div>;
+            if (isLoading && step !== 3) return (
+                <div className="min-h-screen bg-white flex flex-col items-center justify-center space-y-4">
+                    <Icon name="loader" className={theme.text} size={40} />
+                    <p className="text-[10px] font-black tracking-widest text-slate-400 uppercase">System Initializing...</p>
+                </div>
+            );
 
             return (
-                <div className="max-w-md mx-auto min-h-screen bg-white shadow-xl relative overflow-x-hidden">
+                <div className="min-h-screen bg-slate-50 flex flex-col items-center font-sans text-slate-900 overflow-x-hidden">
                     {view === 'survey' ? (
-                        <div className="flex flex-col min-h-screen">
+                        <div className="w-full max-w-md bg-white min-h-screen flex flex-col relative shadow-2xl">
+                            
+                            {/* Step 0: Hero & Tier Selection */}
                             {step === 0 && (
-                                <div className="animate-in pb-10">
-                                    <div className="p-8 pt-14 bg-slate-50 border-b rounded-b-[3rem]">
-                                        <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full ${theme.light} ${theme.text} text-[10px] font-black uppercase tracking-widest mb-5`}>
-                                            <Icon name="database" size={12} /> Data reward system
+                                <div className="flex-1 animate-fade-in">
+                                    <div className="p-8 pt-12 bg-slate-50 border-b border-slate-100 rounded-b-[2.5rem]">
+                                        <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full ${theme.light} ${theme.text} text-[10px] font-black uppercase tracking-widest mb-4`}>
+                                            <Icon name="database" size={12} /> Data Reward System
                                         </div>
-                                        <h1 className="text-3xl font-black leading-tight mb-4 break-keep">{texts.heroTitle}</h1>
-                                        <p className="text-slate-500 text-sm leading-relaxed opacity-80">{texts.heroSub}</p>
-                                        <div className="grid grid-cols-2 gap-3 mt-8">
-                                            <div className="bg-white p-5 rounded-3xl shadow-sm border">
-                                                <p className="text-[9px] font-black text-slate-300 uppercase">참여율</p>
+                                        <h1 className="text-[1.8rem] font-black leading-[1.2] tracking-tight mb-4 break-keep">
+                                            {texts.heroTitle}
+                                        </h1>
+                                        <p className="text-slate-500 text-[14px] leading-relaxed break-keep opacity-90 mb-4">
+                                            {texts.heroSub}
+                                        </p>
+                                        {theme.isMedical && (
+                                            <div className="p-3 bg-emerald-50 border border-emerald-100 rounded-xl mb-4">
+                                                <p className="text-[10px] text-emerald-800 leading-relaxed break-keep font-medium">
+                                                    {texts.legalNotice}
+                                                </p>
+                                            </div>
+                                        )}
+                                        <div className="grid grid-cols-2 gap-3 mt-6">
+                                            <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
+                                                <p className="text-[9px] font-black text-slate-400 uppercase mb-1">참여율</p>
                                                 <p className="text-xl font-black">{STRINGS.common.participation}</p>
                                             </div>
-                                            <div className="bg-white p-5 rounded-3xl shadow-sm border">
-                                                <p className="text-[9px] font-black text-slate-300 uppercase">최대 보상</p>
+                                            <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
+                                                <p className="text-[9px] font-black text-slate-400 uppercase mb-1">최대 보상</p>
                                                 <p className={`text-xl font-black ${theme.text}`}>{STRINGS.common.maxReward}</p>
                                             </div>
                                         </div>
                                     </div>
+
                                     <div className="p-6 space-y-4">
-                                        <button onClick={() => { setTier('standard'); setStep(1); }} className="w-full p-6 bg-white border-2 rounded-[2rem] text-left hover:border-indigo-500 transition-all">
-                                            <Icon name="target" className="text-indigo-600 mb-2" />
-                                            <h3 className="font-black">가계 경제 지표 가치 회복</h3>
-                                            <p className="text-indigo-600 font-black text-lg">2.5만 포인트</p>
+                                        <button onClick={() => { setTier('standard'); setStep(1); }} className="w-full group p-6 bg-white border-2 border-slate-100 rounded-3xl text-left transition-all active:scale-95 hover:border-indigo-500 shadow-sm">
+                                            <div className="flex justify-between items-start mb-4">
+                                                <div className="p-3 bg-indigo-50 text-indigo-600 rounded-xl"><Icon name="target" size={24}/></div>
+                                                <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest">LIFESTYLE INDEX</span>
+                                            </div>
+                                            <h3 className="text-lg font-black mb-1">가계 경제 지표 가치 회복</h3>
+                                            <div className="flex justify-between items-end">
+                                                <div>
+                                                    <span className="text-xl font-black text-indigo-600">2.5만 포인트</span>
+                                                    <p className="text-[9px] font-bold text-rose-500 mt-1">{STRINGS.common.rewardNote}</p>
+                                                </div>
+                                                <Icon name="chevron-right" className="text-slate-200 group-hover:text-indigo-500" />
+                                            </div>
                                         </button>
-                                        <button onClick={() => { setTier('premium'); setStep(1); }} className="w-full p-6 bg-slate-900 text-white rounded-[2rem] text-left shadow-xl">
-                                            <Icon name="gem" className={`${theme.text} mb-2`} />
-                                            <h3 className="font-black">기업 경영 전략 인덱스 보상</h3>
-                                            <p className={`${theme.isMedical ? 'text-emerald-400' : 'text-indigo-400'} font-black text-lg`}>4.9만 포인트</p>
+
+                                        <button onClick={() => { setTier('premium'); setStep(1); }} className="w-full group p-6 bg-slate-900 text-white rounded-3xl text-left transition-all active:scale-95 shadow-xl">
+                                            <div className="flex justify-between items-start mb-4">
+                                                <div className={`p-3 ${theme.bg} text-white rounded-xl shadow-lg`}><Icon name="gem" size={24}/></div>
+                                                <span className="text-[10px] font-black text-white/30 uppercase tracking-widest">PREMIUM STRATEGY</span>
+                                            </div>
+                                            <h3 className="text-lg font-black mb-1">기업 경영 전략 인덱스 보상</h3>
+                                            <div className="flex justify-between items-end">
+                                                <div>
+                                                    <span className={`text-xl font-black ${theme.isMedical ? 'text-emerald-400' : 'text-teal-400'}`}>4.9만 포인트</span>
+                                                    <p className="text-[9px] font-bold text-teal-400/60 mt-1">{STRINGS.common.rewardNote}</p>
+                                                </div>
+                                                <Icon name="chevron-right" className="text-white/20" />
+                                            </div>
                                         </button>
-                                        <div className={`p-6 ${theme.light} rounded-[2rem] border italic`}>
-                                            <p className="text-xs font-bold text-slate-700">"{texts.thanks}"</p>
+
+                                        {/* 감사 편지 */}
+                                        <div className={`p-6 ${theme.light} rounded-3xl border border-slate-100`}>
+                                            <div className={`flex items-center gap-2 mb-3 ${theme.text}`}>
+                                                <Icon name="send" size={16} />
+                                                <span className="text-[10px] font-black uppercase tracking-widest">{texts.ownerLabel}님의 메시지</span>
+                                            </div>
+                                            <p className="text-[13px] font-bold leading-relaxed text-slate-700 break-keep italic">
+                                                "{texts.thanks}"
+                                            </p>
+                                            {theme.isMedical && (
+                                                <p className="text-[10px] mt-4 text-emerald-700/60 font-medium">{texts.medicalNote}</p>
+                                            )}
                                         </div>
                                     </div>
                                 </div>
                             )}
+
+                            {/* Step 1: Detailed Survey */}
                             {step === 1 && (
-                                <div className="p-8 animate-in">
-                                    <h2 className="text-2xl font-black mb-6 uppercase italic">Data Indexing</h2>
-                                    <div className="grid grid-cols-2 gap-3 mb-10">
-                                        {(tier === 'standard' ? ['사회 초년생', '신혼부부', '자녀양육', '은퇴준비'] : ['법인 대표', '개인사업자', '전문직', '자산가']).map(c => (
-                                            <button key={c} onClick={() => setFormData({...formData, category: c})} className={`py-4 rounded-2xl border-2 font-black text-xs ${formData.category === c ? `${theme.border} ${theme.light} ${theme.text}` : 'bg-slate-50 text-slate-400 border-transparent'}`}>{c}</button>
+                                <div className="flex-1 p-8 animate-fade-in">
+                                    <button onClick={() => setStep(0)} className="mb-6 text-slate-400 flex items-center gap-1 font-bold text-xs"><Icon name="arrow-left" size={14}/> 이전으로</button>
+                                    <h2 className="text-2xl font-black text-slate-900 tracking-tight mb-2 uppercase italic">Data Indexing</h2>
+                                    <p className="text-slate-400 text-sm font-medium mb-8 break-keep">정확한 데이터 그룹과 평가 대상을 선택해 주세요.</p>
+                                    
+                                    <div className="grid grid-cols-2 gap-3 mb-8">
+                                        {(tier === 'standard' 
+                                            ? ['사회 초년생', '신혼부부', '자녀양육', '은퇴준비'] 
+                                            : ['법인 대표', '개인사업자', '전문직', '자산가']
+                                        ).map(c => (
+                                            <button key={c} onClick={() => updateForm('category', c)} className={`py-4 rounded-xl border-2 text-[12px] font-black transition-all ${formData.category === c ? `${theme.border} ${theme.light} ${theme.text}` : 'border-slate-50 bg-slate-50 text-slate-400'}`}>{c}</button>
                                         ))}
                                     </div>
-                                    <button onClick={() => setStep(2)} disabled={!formData.category} className={`w-full ${theme.bg} text-white py-5 rounded-2xl font-black shadow-xl disabled:opacity-30`}>다음 단계로</button>
+
+                                    <div className="space-y-3">
+                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-2 italic">Evaluation Target</p>
+                                        {(tier === 'standard'
+                                            ? ['월 고정 금융 비용 최적화 지표평가', '생애 주기별 유동성 확보 데이터 평가', '리스크 비용 & 비상 상황 대비 자산 완충 지수 평가']
+                                            : ['사업 구조 전환에 따른 자산 가치 데이터 평가', '미정산 재무 계정의 리스크 인덱스 및 정산 효율성 평가', '사내 유보 자본의 유동화 및 자본 구조 최적화 지표 평가', '기업 승계 데이터 유효성 검증 및 세대 간 자산 이동 효율성 평가']
+                                        ).map(q => (
+                                            <button key={q} onClick={() => updateForm('interest', q)} className={`w-full p-5 rounded-xl border-2 text-left text-[12px] font-bold transition-all break-keep ${formData.interest === q ? `${theme.border} ${theme.light} ${theme.text}` : 'border-slate-50 bg-slate-50 text-slate-400'}`}>
+                                                {q}
+                                            </button>
+                                        ))}
+                                    </div>
+
+                                    <button disabled={!formData.category || !formData.interest} onClick={() => setStep(2)} className={`mt-10 w-full ${theme.bg} text-white py-5 rounded-2xl font-black shadow-xl disabled:opacity-30 active:scale-95 transition-all uppercase tracking-widest`}>다음 단계로</button>
                                 </div>
                             )}
+
+                            {/* Step 2: Information & Consents */}
                             {step === 2 && (
-                                <div className="p-8 animate-in">
-                                    <h2 className="text-2xl font-black mb-8 uppercase italic">Contract</h2>
+                                <div className="flex-1 p-8 animate-fade-in">
+                                    <button onClick={() => setStep(1)} className="mb-6 text-slate-400 flex items-center gap-1 font-bold text-xs"><Icon name="arrow-left" size={14}/> 이전으로</button>
+                                    <h2 className="text-2xl font-black text-slate-900 tracking-tight mb-2 uppercase italic">Contract</h2>
+                                    <p className="text-slate-400 text-sm font-medium mb-8">정보 이용료 지급을 위해 본인 정보를 입력해 주세요.</p>
+                                    
                                     <div className="space-y-4 mb-8">
-                                        <input type="text" placeholder="성함" className="w-full p-4 bg-slate-50 rounded-2xl font-bold border-2 border-transparent focus:border-indigo-500 outline-none" onChange={e => setFormData({...formData, name: e.target.value})} />
-                                        <input type="tel" placeholder="연락처 (-제외)" className="w-full p-4 bg-slate-50 rounded-2xl font-bold border-2 border-transparent focus:border-indigo-500 outline-none" onChange={e => setFormData({...formData, phone: e.target.value})} />
-                                        <input type="text" placeholder="거주지역 (시/군/구)" className="w-full p-4 bg-slate-50 rounded-2xl font-bold border-2 border-transparent focus:border-indigo-500 outline-none" onChange={e => setFormData({...formData, region: e.target.value})} />
-                                    </div>
-                                    <div className="space-y-3 mb-10 text-[10px] font-bold">
-                                        <div className="bg-slate-50 p-4 rounded-2xl cursor-pointer" onClick={() => setAgreed({...agreed, collect: !agreed.collect})}>
-                                            <input type="checkbox" checked={agreed.collect} readOnly className="mr-2" /> [필수] 개인정보 수집 및 이용 동의
+                                        <input type="text" placeholder="성함" className="w-full p-4 bg-slate-50 rounded-xl font-bold outline-none border-2 border-transparent focus:border-indigo-500" value={formData.name} onChange={e => updateForm('name', e.target.value)} />
+                                        <div className="grid grid-cols-2 gap-3">
+                                            <input type="text" placeholder="생년월일 (6자리)" className="w-full p-4 bg-slate-50 rounded-xl font-bold outline-none border-2 border-transparent focus:border-indigo-500" value={formData.birth} onChange={e => updateForm('birth', e.target.value)} />
+                                            <input type="tel" placeholder="연락처 (-제외)" className="w-full p-4 bg-slate-50 rounded-xl font-bold outline-none border-2 border-transparent focus:border-indigo-500" value={formData.phone} onChange={e => updateForm('phone', e.target.value)} />
                                         </div>
-                                        <div className="bg-slate-900 p-5 rounded-[2rem] text-white cursor-pointer" onClick={() => setAgreed({...agreed, contract: !agreed.contract})}>
-                                            <input type="checkbox" checked={agreed.contract} readOnly className="mr-2" /> [필수] 데이터 매매 계약 및 검증 동의
-                                            <p className="mt-2 text-[9px] text-slate-400 leading-relaxed italic">• 보상 조건: 전문가 대면 상담을 통한 데이터 실검증 완료 시 지급</p>
+                                        <input type="text" placeholder="거주 지역 (시/군/구)" className="w-full p-4 bg-slate-50 rounded-xl font-bold outline-none border-2 border-transparent focus:border-indigo-500" value={formData.region} onChange={e => updateForm('region', e.target.value)} />
+                                    </div>
+
+                                    <div className="space-y-3 mb-10">
+                                        <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                                            <div className="flex items-center gap-3 cursor-pointer mb-2" onClick={() => setAgreed(prev => ({...prev, collect: !prev.collect}))}>
+                                                <div className={`w-5 h-5 rounded flex items-center justify-center border-2 ${agreed.collect ? 'bg-indigo-600 border-indigo-600' : 'bg-white border-slate-200'}`}>{agreed.collect && <Icon name="check" size={14} className="text-white"/>}</div>
+                                                <span className="text-[11px] font-black text-slate-700 uppercase">[필수] 개인정보 수집 및 제3자 제공 동의</span>
+                                            </div>
+                                            <div className="text-[9px] text-slate-400 leading-relaxed font-medium pl-8 space-y-1">
+                                                <p>• 수집 항목: 성명, 생년월일, 연락처, 주소, 설문 데이터</p>
+                                                <p>• 제공받는 자: 로컬링크 제휴 분석 전문가(보험설계사, 경영지도사, 세무전문가 등)</p>
+                                                <p>• 제공 목적: 데이터 유효성 검증 실사 및 개인별 최적화 경영/가계 솔루션 제안</p>
+                                                <p>• 보유 기간: 보상 지급 완료 후 1년 또는 정보 주체의 파기 요청 시까지</p>
+                                            </div>
+                                        </div>
+
+                                        <div className="bg-slate-900 p-5 rounded-2xl shadow-lg">
+                                            <div className="flex items-start gap-4 mb-4 cursor-pointer" onClick={() => setAgreed(prev => ({...prev, contract: !prev.contract}))}>
+                                                <div className={`mt-0.5 w-5 h-5 rounded flex items-center justify-center border-2 ${agreed.contract ? 'bg-emerald-500 border-emerald-500' : 'bg-white/10 border-white/20'}`}>{agreed.contract && <Icon name="check" size={14} className="text-white"/>}</div>
+                                                <span className="text-[11px] font-black text-slate-100 uppercase italic">[필수] 데이터 매매 계약 및 검증 동의</span>
+                                            </div>
+                                            <p className="text-[10px] text-slate-400 leading-relaxed font-medium mb-3">
+                                                본 프로그램은 귀하의 경제 지표 데이터를 상업적으로 활용하는 대가로 보상을 지불하는 데이터 커머스 계약입니다.
+                                            </p>
+                                            <ul className="text-[9px] text-slate-500 space-y-1.5 border-t border-white/10 pt-3 font-bold italic">
+                                                <li>• 보상 조건: 배정된 분석 전문가와의 <span className="text-emerald-400 underline">대면 상담을 통한 데이터 실검증 완료 시</span> 확정 지급</li>
+                                                <li>• 고지 사항: 본 프로그램은 특정 금융상품 가입을 강제하지 않으며, 정당한 데이터 거래 계약을 기반으로 운영됩니다.</li>
+                                            </ul>
                                         </div>
                                     </div>
-                                    <button onClick={handleSubmit} className={`w-full ${theme.bg} text-white py-5 rounded-2xl font-black shadow-xl`}>신청 완료</button>
+
+                                    <button onClick={handleSubmit} className={`w-full ${theme.bg} text-white py-5 rounded-2xl font-black text-lg shadow-xl active:scale-95 transition-all flex items-center justify-center gap-2 uppercase tracking-widest`}>신청 완료</button>
                                 </div>
                             )}
+
+                            {/* Step 3: Success */}
                             {step === 3 && (
-                                <div className="flex-1 flex flex-col items-center justify-center p-10 text-center animate-in">
-                                    <Icon name="check-circle" size={80} className={`${theme.text} mb-8`} />
-                                    <h2 className="text-3xl font-black mb-6 italic">SUCCESS</h2>
-                                    <p className="bg-slate-50 p-6 rounded-[2rem] font-bold text-sm text-slate-600 break-keep">{texts.successMsg}</p>
-                                    <button onClick={() => window.location.reload()} className="mt-10 w-full bg-slate-900 text-white py-5 rounded-2xl font-black">완료</button>
+                                <div className="flex-1 flex flex-col items-center justify-center p-8 text-center animate-fade-in">
+                                    <div className={`w-24 h-24 ${theme.light} ${theme.text} rounded-full flex items-center justify-center mb-10 shadow-inner`}>
+                                        <Icon name="check" size={48} />
+                                    </div>
+                                    <h2 className="text-[1.8rem] font-black mb-6 tracking-tighter uppercase italic">Application Sent</h2>
+                                    <div className="bg-slate-50 p-6 rounded-3xl border border-slate-100 mb-10">
+                                        <p className="text-slate-600 font-bold break-keep leading-relaxed text-[15px]">
+                                            데이터 매매 신청이 완료되었습니다.<br/><br/>
+                                            <span className={`${theme.text}`}>{texts.successMsg}</span>
+                                        </p>
+                                    </div>
+                                    <button onClick={() => window.location.reload()} className="w-full bg-slate-900 text-white p-5 rounded-2xl font-black uppercase tracking-widest shadow-xl transition-all">확인</button>
                                 </div>
                             )}
-                            <div className="p-10 text-center opacity-20">
-                                <p className="text-[9px] font-black tracking-widest">© LOCALLINK FINAL PLATFORM v3.0</p>
+
+                            {/* Footer */}
+                            <div className="p-8 flex flex-col items-center opacity-30 mt-auto">
+                                <div className="flex items-center gap-2 text-slate-400 uppercase text-[9px] font-black tracking-[0.3em] italic mb-1">
+                                    <Icon name="shield" size={10} /> Data Security Verified
+                                </div>
+                                <p className="text-[8px] text-slate-300 font-bold italic">© LOCALLINK FINAL PLATFORM v2.5</p>
                             </div>
-                            <button onClick={() => setView('admin')} className="absolute bottom-0 w-full h-10 opacity-0 cursor-default"></button>
+                            <button onClick={() => setView('admin')} className="absolute bottom-0 left-0 w-full h-8 opacity-0 cursor-default">Admin</button>
                         </div>
                     ) : (
-                        <div className="p-8 animate-in">
-                            {!isAdminAuth ? (
-                                <div className="text-center pt-20">
-                                    <h2 className="text-xl font-black mb-10">ADMIN AUTH</h2>
-                                    <input type="password" placeholder="Passcode" className="w-full p-4 bg-slate-100 rounded-xl mb-4 text-center font-black" onChange={e => setPw(e.target.value)} />
-                                    <button onClick={() => pw === '1234' ? setIsAdminAuth(true) : alert("No")} className="w-full bg-slate-900 text-white py-4 rounded-xl font-black">Login</button>
+                        // Admin Mode
+                        <div className="w-full max-w-6xl bg-slate-50 min-h-screen p-6 flex flex-col">
+                            {isAdminAuth ? (
+                                <div className="animate-fade-in">
+                                    <header className="flex justify-between items-center mb-8">
+                                        <h1 className="text-3xl font-black italic underline decoration-indigo-500">Control Center</h1>
+                                        <div className="flex gap-2">
+                                            <button onClick={() => setActiveTab("list")} className={`px-4 py-2 rounded-full text-xs font-black ${activeTab === 'list' ? 'bg-slate-900 text-white' : 'bg-white'}`}>Leads</button>
+                                            <button onClick={() => setActiveTab("settings")} className={`px-4 py-2 rounded-full text-xs font-black ${activeTab === 'settings' ? 'bg-slate-900 text-white' : 'bg-white'}`}>Config</button>
+                                            <button onClick={() => { setIsAdminAuth(false); setView('survey'); }} className="px-4 py-2 bg-rose-50 text-rose-500 rounded-full text-xs font-black">Logout</button>
+                                        </div>
+                                    </header>
+                                    
+                                    {activeTab === 'list' ? (
+                                        <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-100">
+                                            <button onClick={exportExcel} className="mb-4 bg-slate-900 text-white px-4 py-2 rounded-xl text-[10px] font-black flex items-center gap-2"><Icon name="download" size={14}/> Excel Export</button>
+                                            <div className="overflow-x-auto">
+                                                <table className="w-full text-left text-[11px] font-bold">
+                                                    <thead className="bg-slate-900 text-white text-[9px] font-black uppercase italic">
+                                                        <tr><th className="p-5">고객명</th><th className="p-5">연락처</th><th className="p-5">등급</th><th className="p-5">리워드</th><th className="p-5">매장명</th></tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        {leads.map(l => (
+                                                            <tr key={l.id} className="border-b border-slate-50">
+                                                                <td className="p-5">{l.name}</td>
+                                                                <td className="p-5">{l.phone}</td>
+                                                                <td className="p-5 uppercase">{l.tier}</td>
+                                                                <td className="p-5 font-black text-indigo-600">{l.rewardAmount?.toLocaleString()}</td>
+                                                                <td className="p-5">{l.merchantName}</td>
+                                                            </tr>
+                                                        ))}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div className="max-w-xl bg-white p-10 rounded-3xl shadow-sm border border-slate-100">
+                                            <h3 className="font-black mb-8 italic">Merchant Configuration</h3>
+                                            <div className="space-y-6">
+                                                <div className="grid grid-cols-2 gap-4">
+                                                    <input type="text" className="p-4 bg-slate-50 rounded-xl font-bold" placeholder="Store Name" value={config.merchantName} onChange={e => setConfig({...config, merchantName: e.target.value})} />
+                                                    <input type="text" className="p-4 bg-slate-50 rounded-xl font-bold" placeholder="Marketer" value={config.marketerName} onChange={e => setConfig({...config, marketerName: e.target.value})} />
+                                                </div>
+                                                <div className="flex gap-2">
+                                                    <button onClick={() => setConfig({...config, themeType: 'general'})} className={`flex-1 p-4 rounded-xl font-black text-[10px] uppercase ${config.themeType === 'general' ? 'bg-indigo-600 text-white' : 'bg-slate-100'}`}>일반 (사장님)</button>
+                                                    <button onClick={() => setConfig({...config, themeType: 'medical'})} className={`flex-1 p-4 rounded-xl font-black text-[10px] uppercase ${config.themeType === 'medical' ? 'bg-emerald-600 text-white' : 'bg-slate-100'}`}>의료 (원장님)</button>
+                                                </div>
+                                                <input type="text" placeholder="영문 ID (QR 파라미터)" className="w-full p-4 bg-slate-50 border border-slate-100 rounded-xl font-bold mb-4" value={config.merchantId} onChange={e => setConfig({...config, merchantId: e.target.value})} />
+                                                <button 
+                                                    onClick={async () => {
+                                                        const { doc, setDoc } = window.FirebaseSDK;
+                                                        await setDoc(doc(window.db, 'artifacts', appId, 'public', 'data', 'merchants', config.merchantId), config);
+                                                        alert("저장 완료!");
+                                                    }}
+                                                    className="w-full bg-slate-900 text-white py-4 rounded-xl font-black text-xs uppercase shadow-xl"
+                                                >Save Config</button>
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                             ) : (
-                                <div>
-                                    <div className="flex justify-between items-center mb-10">
-                                        <h2 className="text-2xl font-black">LEADS ({leads.length})</h2>
-                                        <button onClick={() => setView('survey')} className="text-xs font-black text-slate-400">EXIT</button>
-                                    </div>
-                                    <div className="space-y-4">
-                                        {leads.map(l => (
-                                            <div key={l.id} className="p-5 bg-slate-50 rounded-2xl border">
-                                                <p className="font-black text-sm">{l.name} / {l.phone}</p>
-                                                <p className="text-[10px] text-slate-400 mt-1">{l.merchantName} ({l.marketerName})</p>
-                                                <div className="mt-3 flex justify-between items-end">
-                                                    <span className="text-[10px] bg-slate-200 px-2 py-0.5 rounded font-black italic">{l.tier}</span>
-                                                    <span className="text-[10px] font-black text-indigo-600">수익: {(l.salePrice - l.rewardAmount).toLocaleString()}원</span>
-                                                </div>
-                                            </div>
-                                        ))}
+                                <div className="flex-1 flex flex-col items-center justify-center">
+                                    <div className="w-full max-w-sm bg-white p-12 rounded-[3.5rem] shadow-2xl text-center border border-slate-50">
+                                        <h2 className="text-2xl font-black uppercase italic mb-8">Security Auth</h2>
+                                        <input type="password" placeholder="Access Code" className="w-full p-5 bg-slate-50 rounded-2xl font-black text-center outline-none border-2 border-transparent focus:border-indigo-500 mb-6" value={pw} onChange={e => setPw(e.target.value)} />
+                                        <button onClick={() => pw === "1234" ? setIsAdminAuth(true) : alert("비밀번호 불일치")} className="w-full bg-slate-900 text-white py-5 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl">Login</button>
                                     </div>
                                 </div>
                             )}
@@ -256,6 +436,16 @@
                 </div>
             );
         }
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBAngyJvkAQ5lbRNH3I5PI4TtPH1CFY7fA",
+            authDomain: "link-final-a7d96.firebaseapp.com",
+            projectId: "link-final-a7d96",
+            storageBucket: "link-final-a7d96.firebasestorage.app",
+            messagingSenderId: "764608459792",
+            appId: "1:764608459792:web:2bf90ae95419c5d32c4695",
+            measurementId: "G-TDS9MCRX70"
+        };
 
         const root = ReactDOM.createRoot(document.getElementById('root'));
         root.render(<App />);
