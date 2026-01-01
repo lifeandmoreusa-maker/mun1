@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>로컬링크(LocalLink) 최종 플랫폼</title>
+    <!-- 도구 모음 -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <!-- Firebase (CDN 버전) -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <!-- 아이콘 (Lucide) -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;700;900&display=swap');
+        body { font-family: 'Noto Sans KR', sans-serif; }
+        .animate-in { animation: fadeIn 0.5s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body class="bg-slate-50">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        // --- [1. 파이어베이스 설정: 본인의 정보를 여기에 넣으세요] ---
+        const firebaseConfig = {
+  apiKey: "AIzaSyBAngyJvkAQ5lbRNH3I5PI4TtPH1CFY7fA",
+  authDomain: "link-final-a7d96.firebaseapp.com",
+  projectId: "link-final-a7d96",
+  storageBucket: "link-final-a7d96.firebasestorage.app",
+  messagingSenderId: "764608459792",
+  appId: "1:764608459792:web:2bf90ae95419c5d32c4695",
+  measurementId: "G-TDS9MCRX70"
+};
+
+        // 초기화
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+        const appId = "locallink-final-v3";
+
+        const { useState, useEffect, useMemo } = React;
+
+        // 아이콘 컴포넌트 (Lucide를 React용으로 변환)
+        const Icon = ({ name, size = 20, className = "" }) => {
+            useEffect(() => { lucide.createIcons(); }, [name]);
+            return <i data-lucide={name} style={{ width: size, height: size }} className={className}></i>;
+        };
+
+        // --- [2. 텍스트 설정] ---
+        const STRINGS = {
+            common: { participation: "96.8%", maxReward: "4.9만 포인트", rewardNote: "※ 대면 실검증 시 제공" },
+            general: {
+                heroTitle: "우리 사장님이 직접 드리는 데이터 보상",
+                heroSub: "로컬링크 파트너 내방 고객을 위한 데이터 보상 혜택 시스템! 고객님의 라이프 지표를 데이터로 공급하고 최대 4.9만 포인트 리워드를 받으세요.",
+                ownerLabel: "사장님",
+                thanks: "고객님의 소중한 데이터도 정당한 자산이 되어야 합니다. 사장인 제가 보증하는 로컬링크의 투명한 분석을 통해서 전문가를 통한 본인 데이터 자산의 가치를 발견하고, 새로운 자산의 가치를 창출하시길 바랍니다.",
+                successMsg: "배정된 분석 전문가와의 대면 검증 후 플랫폼에서 약속된 보상을 사장님을 통해서 전달해 드립니다.(상품권, 리워드)"
+            },
+            medical: {
+                heroTitle: "우리 원장님이 준비한 데이터 보상 시스템",
+                heroSub: "로컬링크 파트너 내방 고객을 위해 기다리시는 동안 데이터 보상 혜택 시스템. 고객님의 라이프 지표를 데이터로 공급하고 최대 4.9만 포인트 리워드로 받으세요.",
+                legalNotice: "본 프로그램은 의료법 및 금융소비자보호법을 준수합니다. 제공되는 보상은 진료나 조제, 금융상품 가입의 대가가 아닌 데이터 가치 분석에 따른 정당한 정보 이용료입니다.",
+                ownerLabel: "원장님",
+                thanks: "고객님의 소중한 데이터도 정당한 자산이 되어야 합니다. 원장님인 제가 보증하는 로컬링크의 투명한 분석을 통해 본인 데이터 자산의 가치를 발견하시길 바랍니다. 지역 사회의 데이터 주권 보호를 위해 함께해주셔서 감사합니다. * 본 안내는 의료 서비스 및 조제와 무관한 외부 데이터 제휴 프로그램입니다.",
+                successMsg: "배정된 분석 전문가와의 대면 검증 후 플랫폼에서 약속된 보상을 직접 전송해 드립니다."
+            }
+        };
+
+        const THEMES = {
+            general: { primary: "indigo", bg: "bg-indigo-600", text: "text-indigo-600", border: "border-indigo-600", light: "bg-indigo-50", isMedical: false },
+            medical: { primary: "emerald", bg: "bg-emerald-600", text: "text-emerald-600", border: "border-emerald-600", light: "bg-emerald-50", isMedical: true }
+        };
+
+        function App() {
+            const [view, setView] = useState('survey');
+            const [step, setStep] = useState(0);
+            const [tier, setTier] = useState(null);
+            const [isAdminAuth, setIsAdminAuth] = useState(false);
+            const [pw, setPw] = useState("");
+            const [isLoading, setIsLoading] = useState(true);
+            const [leads, setLeads] = useState([]);
+            const [activeTab, setActiveTab] = useState("list");
+            
+            const [config, setConfig] = useState({
+                merchantId: "default", merchantName: "로컬링크 파트너", themeType: "general", 
+                marketerName: "본사 직영", stdPrice: 120000, prePrice: 200000, stdReward: 25000, preReward: 49000
+            });
+            
+            const [formData, setFormData] = useState({ name: "", birth: "", phone: "", region: "", category: "", interest: "" });
+            const [agreed, setAgreed] = useState({ collect: false, third: false, contract: false });
+            
+            const theme = THEMES[config.themeType] || THEMES.general;
+            const texts = theme.isMedical ? STRINGS.medical : STRINGS.general;
+
+            useEffect(() => {
+                const init = async () => {
+                    await auth.signInAnonymously();
+                    const params = new URLSearchParams(window.location.search);
+                    const mid = params.get('id');
+                    if (mid) {
+                        const snap = await db.collection('artifacts').doc(appId).collection('public').doc('merchants').collection('data').doc(mid).get();
+                        if (snap.exists) setConfig(prev => ({ ...prev, ...snap.data() }));
+                    }
+                    setIsLoading(false);
+                };
+                init();
+            }, []);
+
+            useEffect(() => {
+                if (view === 'admin' && isAdminAuth) {
+                    const unsub = db.collection('artifacts').doc(appId).collection('public').doc('leads').collection('data')
+                        .onSnapshot(snap => {
+                            const data = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                            setLeads(data.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0)));
+                        });
+                    return unsub;
+                }
+            }, [view, isAdminAuth]);
+
+            const handleSubmit = async () => {
+                if (!agreed.collect || !agreed.third || !agreed.contract) return alert("필수 동의가 필요합니다.");
+                setIsLoading(true);
+                try {
+                    await db.collection('artifacts').doc(appId).collection('public').doc('leads').collection('data').add({
+                        ...formData, ...config, tier, 
+                        salePrice: tier === 'premium' ? config.prePrice : config.stdPrice,
+                        rewardAmount: tier === 'premium' ? config.preReward : config.stdReward,
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                    setStep(3);
+                } catch (e) { alert("저장 실패"); }
+                setIsLoading(false);
+            };
+
+            if (isLoading && step !== 3) return <div className="flex items-center justify-center h-screen bg-white font-bold text-slate-300 animate-pulse">SYSTEM LOADING...</div>;
+
+            return (
+                <div className="max-w-md mx-auto min-h-screen bg-white shadow-xl relative overflow-x-hidden">
+                    {view === 'survey' ? (
+                        <div className="flex flex-col min-h-screen">
+                            {step === 0 && (
+                                <div className="animate-in pb-10">
+                                    <div className="p-8 pt-14 bg-slate-50 border-b rounded-b-[3rem]">
+                                        <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full ${theme.light} ${theme.text} text-[10px] font-black uppercase tracking-widest mb-5`}>
+                                            <Icon name="database" size={12} /> Data reward system
+                                        </div>
+                                        <h1 className="text-3xl font-black leading-tight mb-4 break-keep">{texts.heroTitle}</h1>
+                                        <p className="text-slate-500 text-sm leading-relaxed opacity-80">{texts.heroSub}</p>
+                                        <div className="grid grid-cols-2 gap-3 mt-8">
+                                            <div className="bg-white p-5 rounded-3xl shadow-sm border">
+                                                <p className="text-[9px] font-black text-slate-300 uppercase">참여율</p>
+                                                <p className="text-xl font-black">{STRINGS.common.participation}</p>
+                                            </div>
+                                            <div className="bg-white p-5 rounded-3xl shadow-sm border">
+                                                <p className="text-[9px] font-black text-slate-300 uppercase">최대 보상</p>
+                                                <p className={`text-xl font-black ${theme.text}`}>{STRINGS.common.maxReward}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="p-6 space-y-4">
+                                        <button onClick={() => { setTier('standard'); setStep(1); }} className="w-full p-6 bg-white border-2 rounded-[2rem] text-left hover:border-indigo-500 transition-all">
+                                            <Icon name="target" className="text-indigo-600 mb-2" />
+                                            <h3 className="font-black">가계 경제 지표 가치 회복</h3>
+                                            <p className="text-indigo-600 font-black text-lg">2.5만 포인트</p>
+                                        </button>
+                                        <button onClick={() => { setTier('premium'); setStep(1); }} className="w-full p-6 bg-slate-900 text-white rounded-[2rem] text-left shadow-xl">
+                                            <Icon name="gem" className={`${theme.text} mb-2`} />
+                                            <h3 className="font-black">기업 경영 전략 인덱스 보상</h3>
+                                            <p className={`${theme.isMedical ? 'text-emerald-400' : 'text-indigo-400'} font-black text-lg`}>4.9만 포인트</p>
+                                        </button>
+                                        <div className={`p-6 ${theme.light} rounded-[2rem] border italic`}>
+                                            <p className="text-xs font-bold text-slate-700">"{texts.thanks}"</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+                            {step === 1 && (
+                                <div className="p-8 animate-in">
+                                    <h2 className="text-2xl font-black mb-6 uppercase italic">Data Indexing</h2>
+                                    <div className="grid grid-cols-2 gap-3 mb-10">
+                                        {(tier === 'standard' ? ['사회 초년생', '신혼부부', '자녀양육', '은퇴준비'] : ['법인 대표', '개인사업자', '전문직', '자산가']).map(c => (
+                                            <button key={c} onClick={() => setFormData({...formData, category: c})} className={`py-4 rounded-2xl border-2 font-black text-xs ${formData.category === c ? `${theme.border} ${theme.light} ${theme.text}` : 'bg-slate-50 text-slate-400 border-transparent'}`}>{c}</button>
+                                        ))}
+                                    </div>
+                                    <button onClick={() => setStep(2)} disabled={!formData.category} className={`w-full ${theme.bg} text-white py-5 rounded-2xl font-black shadow-xl disabled:opacity-30`}>다음 단계로</button>
+                                </div>
+                            )}
+                            {step === 2 && (
+                                <div className="p-8 animate-in">
+                                    <h2 className="text-2xl font-black mb-8 uppercase italic">Contract</h2>
+                                    <div className="space-y-4 mb-8">
+                                        <input type="text" placeholder="성함" className="w-full p-4 bg-slate-50 rounded-2xl font-bold border-2 border-transparent focus:border-indigo-500 outline-none" onChange={e => setFormData({...formData, name: e.target.value})} />
+                                        <input type="tel" placeholder="연락처 (-제외)" className="w-full p-4 bg-slate-50 rounded-2xl font-bold border-2 border-transparent focus:border-indigo-500 outline-none" onChange={e => setFormData({...formData, phone: e.target.value})} />
+                                        <input type="text" placeholder="거주지역 (시/군/구)" className="w-full p-4 bg-slate-50 rounded-2xl font-bold border-2 border-transparent focus:border-indigo-500 outline-none" onChange={e => setFormData({...formData, region: e.target.value})} />
+                                    </div>
+                                    <div className="space-y-3 mb-10 text-[10px] font-bold">
+                                        <div className="bg-slate-50 p-4 rounded-2xl cursor-pointer" onClick={() => setAgreed({...agreed, collect: !agreed.collect})}>
+                                            <input type="checkbox" checked={agreed.collect} readOnly className="mr-2" /> [필수] 개인정보 수집 및 이용 동의
+                                        </div>
+                                        <div className="bg-slate-900 p-5 rounded-[2rem] text-white cursor-pointer" onClick={() => setAgreed({...agreed, contract: !agreed.contract})}>
+                                            <input type="checkbox" checked={agreed.contract} readOnly className="mr-2" /> [필수] 데이터 매매 계약 및 검증 동의
+                                            <p className="mt-2 text-[9px] text-slate-400 leading-relaxed italic">• 보상 조건: 전문가 대면 상담을 통한 데이터 실검증 완료 시 지급</p>
+                                        </div>
+                                    </div>
+                                    <button onClick={handleSubmit} className={`w-full ${theme.bg} text-white py-5 rounded-2xl font-black shadow-xl`}>신청 완료</button>
+                                </div>
+                            )}
+                            {step === 3 && (
+                                <div className="flex-1 flex flex-col items-center justify-center p-10 text-center animate-in">
+                                    <Icon name="check-circle" size={80} className={`${theme.text} mb-8`} />
+                                    <h2 className="text-3xl font-black mb-6 italic">SUCCESS</h2>
+                                    <p className="bg-slate-50 p-6 rounded-[2rem] font-bold text-sm text-slate-600 break-keep">{texts.successMsg}</p>
+                                    <button onClick={() => window.location.reload()} className="mt-10 w-full bg-slate-900 text-white py-5 rounded-2xl font-black">완료</button>
+                                </div>
+                            )}
+                            <div className="p-10 text-center opacity-20">
+                                <p className="text-[9px] font-black tracking-widest">© LOCALLINK FINAL PLATFORM v3.0</p>
+                            </div>
+                            <button onClick={() => setView('admin')} className="absolute bottom-0 w-full h-10 opacity-0 cursor-default"></button>
+                        </div>
+                    ) : (
+                        <div className="p-8 animate-in">
+                            {!isAdminAuth ? (
+                                <div className="text-center pt-20">
+                                    <h2 className="text-xl font-black mb-10">ADMIN AUTH</h2>
+                                    <input type="password" placeholder="Passcode" className="w-full p-4 bg-slate-100 rounded-xl mb-4 text-center font-black" onChange={e => setPw(e.target.value)} />
+                                    <button onClick={() => pw === '1234' ? setIsAdminAuth(true) : alert("No")} className="w-full bg-slate-900 text-white py-4 rounded-xl font-black">Login</button>
+                                </div>
+                            ) : (
+                                <div>
+                                    <div className="flex justify-between items-center mb-10">
+                                        <h2 className="text-2xl font-black">LEADS ({leads.length})</h2>
+                                        <button onClick={() => setView('survey')} className="text-xs font-black text-slate-400">EXIT</button>
+                                    </div>
+                                    <div className="space-y-4">
+                                        {leads.map(l => (
+                                            <div key={l.id} className="p-5 bg-slate-50 rounded-2xl border">
+                                                <p className="font-black text-sm">{l.name} / {l.phone}</p>
+                                                <p className="text-[10px] text-slate-400 mt-1">{l.merchantName} ({l.marketerName})</p>
+                                                <div className="mt-3 flex justify-between items-end">
+                                                    <span className="text-[10px] bg-slate-200 px-2 py-0.5 rounded font-black italic">{l.tier}</span>
+                                                    <span className="text-[10px] font-black text-indigo-600">수익: {(l.salePrice - l.rewardAmount).toLocaleString()}원</span>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    )}
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
