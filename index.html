@@ -56,7 +56,6 @@
     <script type="text/babel">
         const { useState, useEffect, useMemo } = React;
 
-        // 아이콘 컴포넌트
         const Icon = ({ name, size = 24, className = "" }) => {
             const icons = {
                 "loader": <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="spinner"><path d="M21 12a9 9 0 1 1-6.219-8.56" /></svg>,
@@ -75,7 +74,8 @@
                 "clipboard-check": <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="m9 14 2 2 4-4"/></svg>,
                 "save": <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>,
                 "edit": <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>,
-                "calendar": <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
+                "calendar": <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>,
+                "hand-tap": <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="animate-bounce"><path d="M10 11V6a1 1 0 0 1 2 0v5m0 0V4a1 1 0 0 1 2 0v7m0 0V6a1 1 0 0 1 2 0v5m0 0a1 1 0 0 1 2 0v7a8 8 0 0 1-8 8h-2a8 8 0 0 1-8-8V7a1 1 0 0 1 2 0v4" /></svg>
             };
             return <span className={`inline-block ${className}`} style={{ width: size, height: size }}>{icons[name] || null}</span>;
         };
@@ -86,12 +86,12 @@
         };
 
         const firebaseConfig = {
-            apiKey: "AIzaSyBAngyJvkAQ5lbRNH3I5PI4TtPH1CFY7fA",
-            authDomain: "link-final-a7d96.firebaseapp.com",
-            projectId: "link-final-a7d96",
-            storageBucket: "link-final-a7d96.firebasestorage.app",
-            messagingSenderId: "764608459792",
-            appId: "1:764608459792:web:2bf90ae95419c5d32c4695",
+            apiKey: "AIzaSyDs_WGcb7J1TpvYCyBXLe_5gYvVIZMdPyQ",
+            authDomain: "locallink-bsr.firebaseapp.com",
+            projectId: "locallink-bsr",
+            storageBucket: "locallink-bsr.firebasestorage.app",
+            messagingSenderId: "216243154188",
+            appId: "1:216243154188:web:1b818b093f40c177706d29",
             measurementId: "G-TDS9MCRX70"
         };
 
@@ -105,18 +105,20 @@
             const [pw, setPw] = useState("");
             const [isLoading, setIsLoading] = useState(true);
             const [leads, setLeads] = useState([]);
+            const [allMerchants, setAllMerchants] = useState([]); // 모든 매장 목록 상태 추가
             const [activeTab, setActiveTab] = useState("list");
             
-            // 필터링 상태 (년월 필터 yearMonth 추가)
+            const [isMarketerLocked, setIsMarketerLocked] = useState(false);
+
             const [filters, setFilters] = useState({
                 merchantId: "", tier: "", isConsulted: "all", isFake: "all", isRewardPaid: "all", marketerName: "", yearMonth: ""
             });
 
             const [config, setConfig] = useState({
-                merchantId: "default", merchantName: "로컬링크 파트너", themeType: "general", marketerName: "본사",
+                merchantId: "default", merchantName: "로컬링크 파트너", themeType: "general", marketerName: "",
                 marketerRecipient: "", password: "1234",
                 deliveryType: "owner",
-                stdPrice: 120000, prePrice: 200000, stdReward: 25000, preReward: 49000,
+                stdPrice: 120000, prePrice: 200000, stdReward: 25000, preReward: 50000,
                 stdOptions: "사회 초년생, 신혼부부, 자녀양육, 은퇴준비",
                 preOptions: "법인 대표, 개인사업자, 전문직, 자산가",
                 stdQuestions: "월 고정 금융 비용 최적화 지표평가|생애 주기별 유동성 확보 데이터 평가|리스크 비용 & 비상 상황 대비 자산 완충 지수 평가|세무 비용 및 건강보험료 가계 부담 최적화 지표 데이터 평가",
@@ -124,7 +126,7 @@
                 heroTitle: "우리 사장님이 직접 드리는 데이터 보상",
                 heroSubText: "내방 고객을 위한 데이터 보상 혜택 시스템! 고객님의 라이프 지표를 데이터로 공급하고 리워드 포인트를 받으세요.",
                 heroTitleMedical: "우리 원장님이 준비한 데이터 보상 시스템",
-                heroSubTextMedical: "로컬링크 파트너 내방 고객을 위해 기다리시는 동안 데이터 보상 혜택 시스템! 고객님의 라이프 지표를 데이터로 공급하고 최대 4.9만 포인트 리워드로 받으세요.",
+                heroSubTextMedical: "로컬링크 파트너 내방 고객을 위해 기다리시는 동안 데이터 보상 혜택 시스템! 고객님의 라이프 지표를 데이터로 공급하고 최대 5만 포인트 리워드로 받으세요.",
                 medicalThanks: "고객님의 소중한 데이터도 정당한 자산이 되어야 합니다. “원장님인” 제가 보증하는 로컬링크의 투명한 분석을 통해 본인 데이터 자산의 가치를 발견하시길 바랍니다. 지역 사회의 데이터 주권 보호를 위해 함께해주셔서 감사합니다.",
                 generalThanks: "고객님의 소중한 데이터도 정당한 자산이 되어야 합니다. 사장인 제가 보증하는 로컬링크의 투명한 분석을 통해서 전문가를 통한 본인데이터 자산의 가치를 발견하고, 새로운 자산의 가치를 창출하시길 바랍니다.",
                 thirdPartyRecipient: "로컬링크 제휴 분석 전문가(보험설계사, 재무설계사, 경영지도사, 세무전문가, 법률전문가 등)",
@@ -163,8 +165,15 @@
                     const mid = params.get('id');
                     if (mid) {
                         const snap = await getDoc(doc(db, 'artifacts', appId, 'public', 'data', 'merchants', mid));
-                        if (snap.exists()) setConfig(prev => ({ ...prev, ...snap.data() }));
-                        else setConfig(prev => ({ ...prev, merchantId: mid }));
+                        if (snap.exists()) {
+                            const data = snap.data();
+                            setConfig(prev => ({ ...prev, ...data }));
+                            if (data.marketerName && data.marketerName.trim() !== "") {
+                                setIsMarketerLocked(true);
+                            }
+                        } else {
+                            setConfig(prev => ({ ...prev, merchantId: mid }));
+                        }
                     }
                     setIsLoading(false);
                     onAuthStateChanged(auth, setUser);
@@ -174,18 +183,29 @@
 
             useEffect(() => {
                 if (view === 'admin' && adminType && user) {
-                    const { collection, onSnapshot } = window.FirebaseSDK;
-                    const q = collection(window.db, 'artifacts', appId, 'public', 'data', 'leads');
-                    const unsubscribe = onSnapshot(q, (snapshot) => {
+                    const { collection, onSnapshot, getDocs } = window.FirebaseSDK;
+                    const qLeads = collection(window.db, 'artifacts', appId, 'public', 'data', 'leads');
+                    const unsubLeads = onSnapshot(qLeads, (snapshot) => {
                         let data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                         if (adminType === 'merchant') data = data.filter(l => l.merchantId === config.merchantId);
                         setLeads(data.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0)));
                     });
-                    return () => unsubscribe();
+
+                    // 마스터 관리자인 경우 전체 매장 목록 가져오기
+                    if (adminType === 'master') {
+                        const qMerchants = collection(window.db, 'artifacts', appId, 'public', 'data', 'merchants');
+                        const unsubMerchants = onSnapshot(qMerchants, (snapshot) => {
+                            const data = snapshot.docs
+                                .map(doc => ({ id: doc.id, ...doc.data() }))
+                                .filter(m => m.id !== 'master_admin');
+                            setAllMerchants(data);
+                        });
+                        return () => { unsubLeads(); unsubMerchants(); };
+                    }
+                    return () => unsubLeads();
                 }
             }, [view, adminType, user, config.merchantId]);
 
-            // 필터링 적용 로직 (년월 필터 포함)
             const filteredLeads = useMemo(() => {
                 return leads.filter(l => {
                     const midMatch = (l.merchantId || "").toLowerCase().includes(filters.merchantId.toLowerCase());
@@ -195,7 +215,6 @@
                     const paidMatch = filters.isRewardPaid === "all" || String(l.isRewardPaid) === filters.isRewardPaid;
                     const marketerMatch = (l.marketerName || "").toLowerCase().includes(filters.marketerName.toLowerCase());
                     
-                    // 년월 필터 로직
                     let ymMatch = true;
                     if (filters.yearMonth && l.createdAt?.toDate) {
                         const date = l.createdAt.toDate();
@@ -203,7 +222,6 @@
                         const m = String(date.getMonth() + 1).padStart(2, '0');
                         ymMatch = `${y}-${m}` === filters.yearMonth;
                     }
-
                     return midMatch && tierMatch && consultedMatch && fakeMatch && paidMatch && marketerMatch && ymMatch;
                 });
             }, [leads, filters]);
@@ -255,8 +273,22 @@
                 const { doc, setDoc } = window.FirebaseSDK;
                 try {
                     await setDoc(doc(window.db, 'artifacts', appId, 'public', 'data', 'merchants', config.merchantId), config);
+                    if (config.marketerName && config.marketerName.trim() !== "") {
+                        setIsMarketerLocked(true);
+                    }
                     alert("설정이 저장되었습니다.");
                 } catch (e) { alert("저장 실패"); }
+            };
+
+            // 마스터용 개별 매장 요금 정책 업데이트
+            const handleMasterPricingUpdate = async (mId, pricingData) => {
+                const { doc, updateDoc } = window.FirebaseSDK;
+                try {
+                    await updateDoc(doc(window.db, 'artifacts', appId, 'public', 'data', 'merchants', mId), pricingData);
+                    alert(`${mId} 매장의 요금 정책이 업데이트되었습니다.`);
+                } catch (e) {
+                    alert("업데이트 실패");
+                }
             };
 
             const handleExportExcel = () => {
@@ -304,9 +336,8 @@
                 setIsLoading(false);
             };
 
-            // 동적 텍스트 관리
             const displayTitle = config.themeType === 'medical' ? (config.heroTitleMedical || "우리 원장님이 준비한 데이터 보상 시스템") : (config.heroTitle || "우리 사장님이 직접 드리는 데이터 보상");
-            const displaySubText = config.themeType === 'medical' ? (config.heroSubTextMedical || "로컬링크 파트너 내방 고객을 위해 기다리시는 동안 데이터 보상 혜택 시스템! 고객님의 라이프 지표를 데이터로 공급하고 최대 4.9만 포인트 리워드로 받으세요.") : config.heroSubText;
+            const displaySubText = config.themeType === 'medical' ? (config.heroSubTextMedical || "로컬링크 파트너 내방 고객을 위해 기다리시는 동안 데이터 보상 혜택 시스템! 고객님의 라이프 지표를 데이터로 공급하고 최대 5만 포인트 리워드로 받으세요.") : config.heroSubText;
 
             return (
                 <div className="min-h-screen flex flex-col items-center overflow-x-hidden relative">
@@ -329,9 +360,19 @@
                                                     </p>
                                                 </div>
                                             )}
+                                            <div className="grid grid-cols-2 gap-3 mt-6">
+                                                <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 text-center">
+                                                    <p className="text-[9px] font-black text-slate-400 uppercase mb-1">참여율</p>
+                                                    <p className="text-xl font-black">96.8%</p>
+                                                </div>
+                                                <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 text-center">
+                                                    <p className="text-[9px] font-black text-slate-400 uppercase mb-1">최대 보상</p>
+                                                    <p className={`text-xl font-black ${theme.text}`}>5만 포인트</p>
+                                                </div>
+                                            </div>
                                         </div>
                                         <div className="p-6 space-y-4">
-                                            <button onClick={() => { setTier('standard'); setStep(1); }} className="w-full p-6 bg-white border-2 border-slate-100 rounded-3xl text-left transition-all active:scale-95 shadow-sm hover:border-indigo-500">
+                                            <button onClick={() => { setTier('standard'); setStep(1); }} className="w-full p-6 bg-white border-2 border-slate-100 rounded-3xl text-left transition-all active:scale-95 shadow-sm hover:border-indigo-500 relative overflow-hidden group">
                                                 <div className="flex justify-between items-start mb-4">
                                                     <div className="p-3 bg-indigo-50 text-indigo-600 rounded-xl"><Icon name="target" size={24}/></div>
                                                     <span className="text-[10px] font-black text-slate-300 uppercase tracking-tighter italic">Lifestyle Index</span>
@@ -339,18 +380,24 @@
                                                 <h3 className="text-lg font-black mb-1 text-slate-900 italic">가계 경제 지표 가치회복</h3>
                                                 <div className="flex justify-between items-end">
                                                     <div><span className="text-xl font-black text-indigo-600">2.5만 포인트</span><p className="text-[9px] font-bold text-rose-500 mt-1">※ 대면 실검증 시 제공</p></div>
-                                                    <Icon name="chevron-right" className="text-slate-200" />
+                                                    <div className="flex flex-col items-center">
+                                                        <Icon name="hand-tap" size={24} className="text-indigo-400 mb-1" />
+                                                        <Icon name="chevron-right" className="text-slate-200" />
+                                                    </div>
                                                 </div>
                                             </button>
-                                            <button onClick={() => { setTier('premium'); setStep(1); }} className="w-full p-6 bg-slate-900 text-white rounded-3xl text-left transition-all active:scale-95 shadow-xl">
+                                            <button onClick={() => { setTier('premium'); setStep(1); }} className="w-full p-6 bg-slate-900 text-white rounded-3xl text-left transition-all active:scale-95 shadow-xl relative overflow-hidden group">
                                                 <div className="flex justify-between items-start mb-4">
                                                     <div className={`p-3 ${theme.bg} text-white rounded-xl shadow-lg`}><Icon name="gem" size={24}/></div>
                                                     <span className="text-[10px] font-black text-white/30 uppercase italic tracking-tighter">Premium Strategy</span>
                                                 </div>
                                                 <h3 className="text-lg font-black mb-1 text-white italic">기업경영 전략 인덱스 보상</h3>
                                                 <div className="flex justify-between items-end">
-                                                    <div><span className={`text-xl font-black text-teal-400`}>4.9만 포인트</span><p className="text-[9px] font-bold text-teal-400/60 mt-1">※ 대면 실검증 시 제공</p></div>
-                                                    <Icon name="chevron-right" className="text-white/20" />
+                                                    <div><span className={`text-xl font-black text-teal-400`}>5만 포인트</span><p className="text-[9px] font-bold text-teal-400/60 mt-1">※ 대면 실검증 시 제공</p></div>
+                                                    <div className="flex flex-col items-center">
+                                                        <Icon name="hand-tap" size={24} className="text-teal-400 mb-1" />
+                                                        <Icon name="chevron-right" className="text-white/20" />
+                                                    </div>
                                                 </div>
                                             </button>
                                             <div className={`mt-8 p-6 ${theme.light} border-2 ${theme.border} border-dashed rounded-[2rem] relative`}>
@@ -385,6 +432,7 @@
                                     <div className="p-8 animate-fade-in overflow-y-auto pb-20">
                                         <button onClick={() => setStep(1)} className="mb-6 text-slate-400 flex items-center gap-1 font-bold text-xs"><Icon name="arrow-left" size={14}/> 이전으로</button>
                                         <h2 className="text-2xl font-black text-slate-900 mb-8 italic uppercase tracking-tighter underline decoration-emerald-500 decoration-4">Contract</h2>
+                                        <p className="text-slate-500 text-[13px] font-bold mb-8 ml-0.5">정확한 데이터 가치 산정을 위해 정보를 입력해 주세요.</p>
                                         <div className="space-y-4 mb-8">
                                             <input type="text" placeholder="성함" className="w-full p-4 bg-slate-50 rounded-xl font-bold outline-none border-2 border-transparent focus:border-indigo-500" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} />
                                             <div className="grid grid-cols-2 gap-3"><input type="text" placeholder="생년월일 (6자리)" className="w-full p-4 bg-slate-50 rounded-xl font-bold outline-none border-2 border-transparent focus:border-indigo-500" value={formData.birth} onChange={e => setFormData({...formData, birth: e.target.value})} /><input type="tel" placeholder="연락처 (-제외)" className="w-full p-4 bg-slate-50 rounded-xl font-bold outline-none border-2 border-transparent focus:border-indigo-500" value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} /></div>
@@ -405,7 +453,7 @@
                                 {step === 3 && (
                                     <div className="flex-1 flex flex-col items-center justify-center p-8 text-center animate-fade-in">
                                         <div className={`w-24 h-24 ${theme.light} ${theme.text} rounded-full flex items-center justify-center mb-10 shadow-inner`}><Icon name="clipboard-check" size={48} /></div>
-                                        <h2 className="text-2xl font-black mb-6 italic uppercase tracking-tighter underline decoration-indigo-500 decoration-8 break-keep">데이터 매매 신청이 완료되었습니다.</h2>
+                                        <h2 className="text-3xl font-black mb-6 italic uppercase tracking-tighter underline decoration-indigo-500 decoration-8 break-keep">데이터 매매 신청이 완료되었습니다.</h2>
                                         <p className="text-slate-600 font-bold mb-10 break-keep italic leading-relaxed">
                                             {config.deliveryType === 'direct' 
                                                 ? "배정된 분석 전문가와의 대면 검증후 플랫폼에서 약속된 보상을 직접 전송해 드립니다."
@@ -416,33 +464,54 @@
                                     </div>
                                 )}
                             </div>
-                            <div className="p-4 bg-slate-50 border-t border-slate-100 flex justify-center"><button onClick={() => setView('admin')} className="text-[10px] font-black text-slate-300 uppercase tracking-widest flex items-center gap-1.5 hover:text-indigo-400 transition-colors"><Icon name="lock" size={10} /> 관리자 모드 진입</button></div>
+                            <div className="p-4 bg-slate-50 border-t border-slate-100 flex justify-center">
+                                <button onClick={() => setView('admin')} className="text-[10px] font-black text-slate-300 uppercase tracking-widest flex items-center gap-1.5 hover:text-indigo-400 transition-colors">
+                                    <Icon name="lock" size={10} /> 관리자 모드 진입
+                                </button>
+                            </div>
                         </div>
                     ) : (
-                        // --- [관리자 대시보드] ---
                         <div className="w-full max-w-7xl bg-slate-50 min-h-screen p-6 flex flex-col items-center">
                             {adminType ? (
                                 <div className="w-full animate-fade-in">
-                                    <header className="flex justify-between items-center mb-6 w-full"><div className="flex flex-col"><h1 className="text-2xl font-black italic underline decoration-indigo-500 decoration-[6px]">Control Center</h1><span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{adminType === 'master' ? 'Master Admin' : `Merchant: ${config.merchantId}`}</span></div><div className="flex gap-2"><button onClick={() => setActiveTab("list")} className={`px-4 py-2 rounded-full text-[10px] font-black ${activeTab === 'list' ? 'bg-slate-900 text-white' : 'bg-white text-slate-400'}`}>Leads ({filteredLeads.length})</button><button onClick={() => setActiveTab("settings")} className={`px-4 py-2 rounded-full text-[10px] font-black ${activeTab === 'settings' ? 'bg-slate-900 text-white' : 'bg-white text-slate-400'}`}>Settings</button><button onClick={() => { setAdminType(null); setView('survey'); }} className="px-4 py-2 bg-rose-50 text-rose-500 rounded-full text-[10px] font-black uppercase">Logout</button></div></header>
+                                    <header className="flex justify-between items-center mb-6 w-full">
+                                        <div className="flex flex-col">
+                                            <h1 className="text-2xl font-black italic underline decoration-indigo-500 decoration-[6px]">Control Center</h1>
+                                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{adminType === 'master' ? 'Master Admin' : `Merchant: ${config.merchantId}`}</span>
+                                        </div>
+                                        <div className="flex gap-2">
+                                            <button onClick={() => setActiveTab("list")} className={`px-4 py-2 rounded-full text-[10px] font-black ${activeTab === 'list' ? 'bg-slate-900 text-white' : 'bg-white text-slate-400'}`}>Leads ({filteredLeads.length})</button>
+                                            <button onClick={() => setActiveTab("settings")} className={`px-4 py-2 rounded-full text-[10px] font-black ${activeTab === 'settings' ? 'bg-slate-900 text-white' : 'bg-white text-slate-400'}`}>Settings</button>
+                                            <button onClick={() => { setAdminType(null); setView('survey'); }} className="px-4 py-2 bg-rose-50 text-rose-500 rounded-full text-[10px] font-black uppercase">Logout</button>
+                                        </div>
+                                    </header>
+
                                     {activeTab === 'list' ? (
                                         <div className="space-y-4 animate-fade-in">
-                                            {/* 필터 영역 (년월 필터 추가) */}
                                             <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-100 flex flex-wrap gap-6 items-end justify-between"><div className="flex flex-wrap gap-4 items-end">
-                                                    {adminType === 'master' && (<><div className="w-32"><label className="text-[9px] font-black text-slate-400 block mb-1">매장 ID</label><input className="w-full p-2 bg-slate-50 rounded-lg text-[11px] font-bold border border-slate-100" value={filters.merchantId} onChange={e => setFilters({...filters, merchantId: e.target.value})} placeholder="ID 입력" /></div></>)}
-                                                    
-                                                    {/* 년월 필터 (매장 ID 옆 배치) */}
+                                                    {adminType === 'master' && (
+                                                        <>
+                                                            <div className="w-32">
+                                                                <label className="text-[9px] font-black text-slate-400 block mb-1">매장 ID</label>
+                                                                <input className="w-full p-2 bg-slate-50 rounded-lg text-[11px] font-bold border border-slate-100" value={filters.merchantId} onChange={e => setFilters({...filters, merchantId: e.target.value})} placeholder="ID 입력" />
+                                                            </div>
+                                                            <div className="w-32">
+                                                                <label className="text-[9px] font-black text-emerald-600 block mb-1">영업자 필터</label>
+                                                                <input className="w-full p-2 bg-emerald-50 rounded-lg text-[11px] font-bold border border-emerald-100" value={filters.marketerName} onChange={e => setFilters({...filters, marketerName: e.target.value})} placeholder="영업자명" />
+                                                            </div>
+                                                        </>
+                                                    )}
                                                     <div className="w-40">
                                                         <label className="text-[9px] font-black text-indigo-600 block mb-1 uppercase flex items-center gap-1"><Icon name="calendar" size={10} /> 접수년월 필터</label>
                                                         <input type="month" className="w-full p-2 bg-indigo-50/50 rounded-lg text-[11px] font-black border border-indigo-100" value={filters.yearMonth} onChange={e => setFilters({...filters, yearMonth: e.target.value})} />
                                                     </div>
-
                                                     <div className="w-24"><label className="text-[9px] font-black text-slate-400 block mb-1">등급</label><select className="w-full p-2 bg-slate-50 rounded-lg text-[11px] font-bold border border-slate-100" value={filters.tier} onChange={e => setFilters({...filters, tier: e.target.value})}><option value="">전체</option><option value="standard">Standard</option><option value="premium">Premium</option></select></div>
                                                     <div className="w-24"><label className="text-[9px] font-black text-slate-400 block mb-1">상담여부</label><select className="w-full p-2 bg-slate-50 rounded-lg text-[11px] font-bold border border-slate-100" value={filters.isConsulted} onChange={e => setFilters({...filters, isConsulted: e.target.value})}><option value="all">전체</option><option value="true">완료</option><option value="false">대기</option></select></div>
                                                     <div className="w-24"><label className="text-[9px] font-black text-slate-400 block mb-1">허위여부</label><select className="w-full p-2 bg-slate-50 rounded-lg text-[11px] font-bold border border-slate-100" value={filters.isFake} onChange={e => setFilters({...filters, isFake: e.target.value})}><option value="all">전체</option><option value="true">허위</option><option value="false">정상</option></select></div>
                                                     <div className="w-24"><label className="text-[9px] font-black text-slate-400 block mb-1">지급상태</label><select className="w-full p-2 bg-slate-50 rounded-lg text-[11px] font-bold border border-slate-100" value={filters.isRewardPaid} onChange={e => setFilters({...filters, isRewardPaid: e.target.value})}><option value="all">전체</option><option value="true">지급완료</option><option value="false">지급대기</option></select></div>
                                                 </div><button onClick={handleExportExcel} className="bg-slate-900 text-white px-6 py-2 rounded-xl text-[10px] font-black uppercase flex items-center gap-2 shadow-lg h-[35px] hover:bg-black transition-all"><Icon name="share" size={14}/> Excel Export</button></div>
-                                            <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-100 w-full overflow-hidden"><div className="admin-table-container"><table className="w-full text-left text-[11px] font-bold"><thead className="bg-slate-900 text-white text-[9px] font-black uppercase italic"><tr><th className="p-4 w-12">No.</th><th className="p-4">접수일</th><th className="p-4">고객/연락처</th><th className="p-4">등급/지역</th><th className="p-4">매장 ID</th><th className="p-4">상담/허위</th><th className="p-4">리워드 정산</th><th className="p-4">지급상태</th></tr></thead>
-                                                        <tbody>{filteredLeads.map((l, i) => { const rewards = getCalculatedReward(l); const dateOnly = l.createdAt?.toDate() ? l.createdAt.toDate().toISOString().split('T')[0] : "-"; return (<tr key={l.id} className={`border-b border-slate-50 ${l.isFake ? 'bg-rose-50 opacity-60' : ''}`}><td className="p-4 text-slate-400 italic">{filteredLeads.length - i}</td><td className="p-4 text-slate-500 font-medium">{dateOnly}</td><td className="p-4">{l.name}<br/><span className="text-slate-400 font-medium">{l.phone}</span></td><td className="p-4 uppercase">{l.tier}<br/><span className="text-slate-400 font-medium">{l.region}</span></td><td className="p-4 font-black text-indigo-600 italic">{l.merchantId}</td><td className="p-4 space-y-1"><label className="flex items-center gap-1 cursor-pointer"><input type="checkbox" checked={l.isConsulted} onChange={(e) => handleStatusUpdate(l.id, 'isConsulted', e.target.checked)} /> 상담완료</label><label className="flex items-center gap-1 cursor-pointer text-rose-500"><input type="checkbox" checked={l.isFake} onChange={(e) => handleStatusUpdate(l.id, 'isFake', e.target.checked)} /> 허위정보</label></td><td className="p-4"><div className="flex flex-col gap-0.5"><span className="text-indigo-600 font-black">매장: {rewards.owner.toLocaleString()}원</span><span className="text-slate-500 text-[10px]">플랫폼: {rewards.platform.toLocaleString()}원</span><span className="text-emerald-600 text-[10px]">영업: {rewards.marketer.toLocaleString()}원</span></div></td><td className="p-4"><button onClick={() => handleStatusUpdate(l.id, 'isRewardPaid', !l.isRewardPaid)} className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase transition-colors ${l.isRewardPaid ? 'bg-emerald-500 text-white shadow-md' : 'bg-slate-100 text-slate-400 hover:bg-slate-200'}`}>{l.isRewardPaid ? '지급완료' : '지급대기'}</button></td></tr>);})}</tbody></table></div>
+                                            <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-100 w-full overflow-hidden"><div className="admin-table-container"><table className="w-full text-left text-[11px] font-bold"><thead className="bg-slate-900 text-white text-[9px] font-black uppercase italic"><tr><th className="p-4 w-12">No.</th><th className="p-4">접수일</th><th className="p-4">고객/연락처</th><th className="p-4">등급/지역</th><th className="p-4">매장 ID</th><th className="p-4">영업자</th><th className="p-4">상담/허위</th><th className="p-4">리워드 정산</th><th className="p-4">지급상태</th></tr></thead>
+                                                        <tbody>{filteredLeads.map((l, i) => { const rewards = getCalculatedReward(l); const dateOnly = l.createdAt?.toDate() ? l.createdAt.toDate().toISOString().split('T')[0] : "-"; return (<tr key={l.id} className={`border-b border-slate-50 ${l.isFake ? 'bg-rose-50 opacity-60' : ''}`}><td className="p-4 text-slate-400 italic">{filteredLeads.length - i}</td><td className="p-4 text-slate-500 font-medium">{dateOnly}</td><td className="p-4">{l.name}<br/><span className="text-slate-400 font-medium">{l.phone}</span></td><td className="p-4 uppercase">{l.tier}<br/><span className="text-slate-400 font-medium">{l.region}</span></td><td className="p-4 font-black text-indigo-600 italic">{l.merchantId}</td><td className="p-4 text-emerald-600 font-black italic">{l.marketerName}</td><td className="p-4 space-y-1"><label className="flex items-center gap-1 cursor-pointer"><input type="checkbox" checked={l.isConsulted} onChange={(e) => handleStatusUpdate(l.id, 'isConsulted', e.target.checked)} /> 상담완료</label><label className="flex items-center gap-1 cursor-pointer text-rose-500"><input type="checkbox" checked={l.isFake} onChange={(e) => handleStatusUpdate(l.id, 'isFake', e.target.checked)} /> 허위정보</label></td><td className="p-4"><div className="flex flex-col gap-0.5"><span className="text-indigo-600 font-black">매장: {rewards.owner.toLocaleString()}원</span><span className="text-slate-500 text-[10px]">플랫폼: {rewards.platform.toLocaleString()}원</span><span className="text-emerald-600 text-[10px]">영업: {rewards.marketer.toLocaleString()}원</span></div></td><td className="p-4"><button onClick={() => handleStatusUpdate(l.id, 'isRewardPaid', !l.isRewardPaid)} className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase transition-colors ${l.isRewardPaid ? 'bg-emerald-500 text-white shadow-md' : 'bg-slate-100 text-slate-400 hover:bg-slate-200'}`}>{l.isRewardPaid ? '지급완료' : '지급대기'} </button></td></tr>);})}</tbody></table></div>
                                                 <div className="mt-6 p-6 bg-slate-900 rounded-2xl flex flex-wrap justify-between items-center text-white gap-6"><div className="flex flex-wrap gap-8"><div><p className="text-[10px] font-black text-slate-400 uppercase mb-1">Total Count</p><p className="text-xl font-black italic">{filteredLeads.length} 건</p></div><div className="border-l border-white/10 pl-8"><p className="text-[10px] font-black text-indigo-400 uppercase mb-1">Total Merchant</p><p className="text-xl font-black text-indigo-400">{totals.owner.toLocaleString()} 원</p></div><div className="border-l border-white/10 pl-8"><p className="text-[10px] font-black text-slate-300 uppercase mb-1">Total Platform</p><p className="text-xl font-black text-white">{totals.platform.toLocaleString()} 원</p></div><div className="border-l border-white/10 pl-8"><p className="text-[10px] font-black text-emerald-400 uppercase mb-1">Total Marketer</p><p className="text-xl font-black text-emerald-400">{totals.marketer.toLocaleString()} 원</p></div></div><div className="text-right"><p className="text-[9px] text-white/30 italic font-medium">* {filters.yearMonth ? `${filters.yearMonth} 검색 결과` : '전체 기간'} 합계</p></div></div></div></div>
                                     ) : (
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full animate-fade-in pb-20">
@@ -454,17 +523,123 @@
                                                         {config.themeType === 'general' ? (<><div><label className="text-[10px] font-black text-slate-400 ml-1 uppercase mb-1 block">Main Title (일반 매장)</label><input className="w-full p-4 bg-slate-50 border border-slate-100 rounded-xl font-bold text-xs" value={config.heroTitle} onChange={e => setConfig({...config, heroTitle: e.target.value})} /></div><div><label className="text-[10px] font-black text-slate-400 ml-1 uppercase mb-1 block">Sub Text (일반 매장)</label><textarea className="w-full p-4 bg-slate-50 border border-slate-100 rounded-xl font-bold text-xs h-20 resize-none" value={config.heroSubText} onChange={e => setConfig({...config, heroSubText: e.target.value})} /></div><div><label className="text-[10px] font-black text-indigo-600 ml-1 uppercase mb-1 block">사장님의 편지 (감사 멘트)</label><textarea className="w-full p-4 bg-indigo-50 border border-indigo-100 rounded-xl font-bold text-xs h-24 resize-none" value={config.generalThanks} onChange={e => setConfig({...config, generalThanks: e.target.value})} /></div></>) : (<><div><label className="text-[10px] font-black text-emerald-600 ml-1 uppercase mb-1 block">Main Title (병원/약국)</label><input className="w-full p-4 bg-emerald-50 border border-emerald-100 rounded-xl font-bold text-xs" value={config.heroTitleMedical} onChange={e => setConfig({...config, heroTitleMedical: e.target.value})} /></div><div><label className="text-[10px] font-black text-emerald-600 ml-1 uppercase mb-1 block">Sub Text (병원/약국)</label><textarea className="w-full p-4 bg-emerald-50 border border-emerald-100 rounded-xl font-bold text-xs h-24 resize-none" value={config.heroSubTextMedical} onChange={e => setConfig({...config, heroSubTextMedical: e.target.value})} /></div><div><label className="text-[10px] font-black text-emerald-700 ml-1 uppercase mb-1 block">원장님의 편지 (감사 멘트)</label><textarea className="w-full p-4 bg-emerald-100/50 border border-emerald-200 rounded-xl font-bold text-xs h-24 resize-none" value={config.medicalThanks} onChange={e => setConfig({...config, medicalThanks: e.target.value})} /></div></>)}
                                                     </div>
                                                     <div className="p-4 bg-indigo-50 rounded-2xl border border-indigo-100"><p className="text-[10px] font-black text-indigo-600 uppercase mb-3 flex items-center gap-1.5">보상 전달 방식</p><div className="flex gap-2"><button onClick={() => setConfig({...config, deliveryType: 'direct'})} className={`flex-1 p-3 rounded-xl font-black text-[10px] uppercase transition-all ${config.deliveryType === 'direct' ? 'bg-indigo-600 text-white shadow-md' : 'bg-white text-slate-400'}`}>플랫폼 직접 전송</button><button onClick={() => setConfig({...config, deliveryType: 'owner'})} className={`flex-1 p-3 rounded-xl font-black text-[10px] uppercase transition-all ${config.deliveryType === 'owner' ? 'bg-indigo-600 text-white shadow-md' : 'bg-white text-slate-400'}`}>사장님 통해 전달</button></div></div>
-                                                    <div className="grid grid-cols-2 gap-4"><div><label className="text-[10px] font-black text-slate-400 ml-1 uppercase mb-2 block">Merchant Name</label><input className="w-full p-4 bg-slate-50 border border-slate-100 rounded-xl font-bold text-xs" value={config.merchantName} onChange={e => setConfig({...config, merchantName: e.target.value})} /></div><div><label className="text-[10px] font-black text-slate-400 ml-1 uppercase mb-2 block">영업자명</label><input className="w-full p-4 bg-slate-50 border border-slate-100 rounded-xl font-bold text-xs" value={config.marketerName} onChange={e => setConfig({...config, marketerName: e.target.value})} /></div></div>
+                                                    <div className="grid grid-cols-2 gap-4"><div><label className="text-[10px] font-black text-slate-400 ml-1 uppercase mb-2 block">Merchant Name</label><input className="w-full p-4 bg-slate-50 border border-slate-100 rounded-xl font-bold text-xs" value={config.merchantName} onChange={e => setConfig({...config, merchantName: e.target.value})} /></div><div><label className="text-[10px] font-black text-slate-400 ml-1 uppercase mb-2 block">영업자명</label><input className={`w-full p-4 rounded-xl font-bold text-xs border ${isMarketerLocked ? 'bg-slate-100 text-slate-400 cursor-not-allowed border-slate-200' : 'bg-white border-slate-100'}`} value={config.marketerName} onChange={e => !isMarketerLocked && setConfig({...config, marketerName: e.target.value})} disabled={isMarketerLocked} placeholder="영업자 성함" /></div></div>
                                                     <button onClick={handleSaveConfig} className="w-full bg-slate-900 text-white py-4 rounded-2xl font-black text-xs uppercase shadow-xl flex items-center justify-center gap-2 hover:bg-black transition-all"><Icon name="save" size={16}/> Save All Category Settings</button>
                                                 </div>
                                             </div>
-                                            <div className="bg-white p-8 rounded-3xl shadow-sm border border-slate-100 h-fit">
-                                                <h3 className="font-black mb-6 italic text-rose-600 uppercase tracking-tighter">Pricing & Security</h3>
-                                                <div className="space-y-6">
-                                                    <div className="grid grid-cols-2 gap-4"><div><label className="text-[10px] font-black text-indigo-600 ml-1 uppercase mb-2 block italic">Std Price (판매가)</label><input type="number" className="w-full p-4 bg-indigo-50 border-indigo-100 rounded-xl font-black text-xs" value={config.stdPrice} onChange={e => setConfig({...config, stdPrice: Number(e.target.value)})} /><label className="text-[9px] text-slate-400 mt-2 block ml-1">Std Reward (고객 리워드)</label><input type="number" className="w-full p-3 bg-slate-50 border border-slate-100 rounded-lg font-bold text-xs mt-1" value={config.stdReward} onChange={e => setConfig({...config, stdReward: Number(e.target.value)})} /></div><div><label className="text-[10px] font-black text-teal-600 ml-1 uppercase mb-2 block italic">Pre Price (판매가)</label><input type="number" className="w-full p-4 bg-teal-50 border-teal-100 rounded-xl font-black text-xs" value={config.prePrice} onChange={e => setConfig({...config, prePrice: Number(e.target.value)})} /><label className="text-[9px] text-slate-400 mt-2 block ml-1">Pre Reward (고객 리워드)</label><input type="number" className="w-full p-3 bg-slate-50 border border-slate-100 rounded-lg font-bold text-xs mt-1" value={config.preReward} onChange={e => setConfig({...config, preReward: Number(e.target.value)})} /></div></div>
-                                                    <div className="p-6 bg-rose-50 rounded-3xl border border-rose-100"><label className="text-[10px] font-black text-rose-600 ml-1 uppercase mb-2 block italic tracking-widest">Change Account Password</label><input type="password" id="new_pw" placeholder="Enter New Password" onKeyDown={(e) => e.key === 'Enter' && handleUpdatePassword(e.target.value)} className="w-full p-4 bg-white border border-rose-100 rounded-xl font-bold text-xs mb-4 outline-none focus:ring-2 focus:ring-rose-500" /><button onClick={() => handleUpdatePassword(document.getElementById('new_pw').value)} className="w-full bg-rose-500 text-white py-4 rounded-2xl font-black text-xs uppercase shadow-lg hover:bg-rose-600 transition-all">Update Access Key</button></div>
-                                                    <div className="p-6 bg-slate-900 rounded-3xl"><p className="text-[10px] font-black text-indigo-400 uppercase italic mb-2 tracking-widest underline decoration-indigo-400">Account / QR ID</p><input className="w-full p-4 bg-white/5 border border-white/10 rounded-2xl font-bold text-white mb-4 outline-none" value={config.merchantId} disabled={adminType !== 'master'} onChange={e => setConfig({...config, merchantId: e.target.value})} /><button onClick={handleSaveConfig} className="w-full bg-indigo-600 text-white py-4 rounded-2xl font-black text-xs uppercase shadow-xl flex items-center justify-center gap-2 hover:bg-indigo-500 transition-all"><Icon name="save" size={16}/> Sync ID</button></div>
+
+                                            <div className="bg-white p-8 rounded-3xl shadow-sm border border-slate-100 h-fit space-y-8">
+                                                <div className="h-fit">
+                                                    <h3 className="font-black mb-6 italic text-rose-600 uppercase tracking-tighter">Pricing & Security</h3>
+                                                    <div className="space-y-6">
+                                                        <div className="grid grid-cols-2 gap-4">
+                                                            <div>
+                                                                <label className="text-[10px] font-black text-indigo-600 ml-1 uppercase mb-2 block italic">Std Price (판매가)</label>
+                                                                <input 
+                                                                    type="number" 
+                                                                    className={`w-full p-4 rounded-xl font-black text-xs border ${adminType === 'master' ? 'bg-indigo-50 border-indigo-100' : 'bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed'}`} 
+                                                                    value={config.stdPrice} 
+                                                                    onChange={e => adminType === 'master' && setConfig({...config, stdPrice: Number(e.target.value)})} 
+                                                                    disabled={adminType !== 'master'} 
+                                                                />
+                                                                <label className="text-[9px] text-slate-400 mt-2 block ml-1">Std Reward (고객 리워드)</label>
+                                                                <input 
+                                                                    type="number" 
+                                                                    className={`w-full p-3 rounded-lg font-bold text-xs mt-1 border ${adminType === 'master' ? 'bg-slate-50 border-slate-100' : 'bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed'}`} 
+                                                                    value={config.stdReward} 
+                                                                    onChange={e => adminType === 'master' && setConfig({...config, stdReward: Number(e.target.value)})} 
+                                                                    disabled={adminType !== 'master'} 
+                                                                />
+                                                            </div>
+                                                            <div>
+                                                                <label className="text-[10px] font-black text-teal-600 ml-1 uppercase mb-2 block italic">Pre Price (판매가)</label>
+                                                                <input 
+                                                                    type="number" 
+                                                                    className={`w-full p-4 rounded-xl font-black text-xs border ${adminType === 'master' ? 'bg-teal-50 border-teal-100' : 'bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed'}`} 
+                                                                    value={config.prePrice} 
+                                                                    onChange={e => adminType === 'master' && setConfig({...config, prePrice: Number(e.target.value)})} 
+                                                                    disabled={adminType !== 'master'} 
+                                                                />
+                                                                <label className="text-[9px] text-slate-400 mt-2 block ml-1">Pre Reward (고객 리워드)</label>
+                                                                <input 
+                                                                    type="number" 
+                                                                    className={`w-full p-3 rounded-lg font-bold text-xs mt-1 border ${adminType === 'master' ? 'bg-slate-50 border-slate-100' : 'bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed'}`} 
+                                                                    value={config.preReward} 
+                                                                    onChange={e => adminType === 'master' && setConfig({...config, preReward: Number(e.target.value)})} 
+                                                                    disabled={adminType !== 'master'} 
+                                                                />
+                                                            </div>
+                                                        </div>
+                                                        {adminType !== 'master' && <p className="text-[9px] text-rose-500 font-bold ml-1">* 보상 및 판매가 정책은 마스터 관리자만 수정 가능합니다.</p>}
+
+                                                        <div className="p-6 bg-rose-50 rounded-3xl border border-rose-100">
+                                                            <label className="text-[10px] font-black text-rose-600 ml-1 uppercase mb-2 block italic tracking-widest">Change Account Password</label>
+                                                            <input type="password" id="new_pw" placeholder="Enter New Password" onKeyDown={(e) => e.key === 'Enter' && handleUpdatePassword(e.target.value)} className="w-full p-4 bg-white border border-rose-100 rounded-xl font-bold text-xs mb-4 outline-none focus:ring-2 focus:ring-rose-500" />
+                                                            <button onClick={() => handleUpdatePassword(document.getElementById('new_pw').value)} className="w-full bg-rose-500 text-white py-4 rounded-2xl font-black text-xs uppercase shadow-lg hover:bg-rose-600 transition-all">Update Access Key</button>
+                                                        </div>
+                                                        <div className="p-6 bg-slate-900 rounded-3xl">
+                                                            <p className="text-[10px] font-black text-indigo-400 uppercase italic mb-2 tracking-widest underline decoration-indigo-400">Account / QR ID</p>
+                                                            <input className="w-full p-4 bg-white/5 border border-white/10 rounded-2xl font-bold text-white mb-4 outline-none" value={config.merchantId} disabled={adminType !== 'master'} onChange={e => setConfig({...config, merchantId: e.target.value})} /><button onClick={handleSaveConfig} className="w-full bg-indigo-600 text-white py-4 rounded-2xl font-black text-xs uppercase shadow-xl flex items-center justify-center gap-2 hover:bg-indigo-500 transition-all"><Icon name="save" size={16}/> Sync ID</button></div>
+                                                    </div>
                                                 </div>
+
+                                                {/* 마스터 관리자 전용: 전체 등록 매장 요금 관리 섹션 */}
+                                                {adminType === 'master' && (
+                                                    <div className="pt-10 border-t border-slate-100 animate-fade-in">
+                                                        <h3 className="font-black mb-6 italic text-indigo-600 uppercase tracking-tighter flex items-center gap-2">
+                                                            <Icon name="database" size={18} /> All Merchants Pricing Control
+                                                        </h3>
+                                                        <div className="admin-table-container max-h-[500px] overflow-y-auto rounded-2xl border border-slate-100 shadow-inner">
+                                                            <table className="w-full text-left text-[10px] font-bold bg-white">
+                                                                <thead className="bg-slate-50 text-slate-400 sticky top-0 uppercase italic">
+                                                                    <tr>
+                                                                        <th className="p-3">Merchant ID</th>
+                                                                        <th className="p-3">Merchant Name</th>
+                                                                        <th className="p-3">Marketer Name</th>
+                                                                        <th className="p-3">Std (Price/Reward)</th>
+                                                                        <th className="p-3">Pre (Price/Reward)</th>
+                                                                        <th className="p-3">Action</th>
+                                                                    </tr>
+                                                                </thead>
+                                                                <tbody>
+                                                                    {allMerchants.map(m => (
+                                                                        <tr key={m.id} className="border-b border-slate-50 hover:bg-slate-50/50">
+                                                                            <td className="p-3 text-indigo-600 font-black">{m.id}</td>
+                                                                            <td className="p-3">{m.merchantName}</td>
+                                                                            <td className="p-3 text-emerald-600">{m.marketerName || "-"}</td>
+                                                                            <td className="p-3">
+                                                                                <div className="flex gap-1">
+                                                                                    <input type="number" className="w-16 p-1 border rounded bg-slate-50" defaultValue={m.stdPrice} id={`stdP_${m.id}`} />
+                                                                                    <input type="number" className="w-16 p-1 border rounded bg-slate-50" defaultValue={m.stdReward} id={`stdR_${m.id}`} />
+                                                                                </div>
+                                                                            </td>
+                                                                            <td className="p-3">
+                                                                                <div className="flex gap-1">
+                                                                                    <input type="number" className="w-16 p-1 border rounded bg-slate-50" defaultValue={m.prePrice} id={`preP_${m.id}`} />
+                                                                                    <input type="number" className="w-16 p-1 border rounded bg-slate-50" defaultValue={m.preReward} id={`preR_${m.id}`} />
+                                                                                </div>
+                                                                            </td>
+                                                                            <td className="p-3">
+                                                                                <button 
+                                                                                    onClick={() => handleMasterPricingUpdate(m.id, {
+                                                                                        stdPrice: Number(document.getElementById(`stdP_${m.id}`).value),
+                                                                                        stdReward: Number(document.getElementById(`stdR_${m.id}`).value),
+                                                                                        prePrice: Number(document.getElementById(`preP_${m.id}`).value),
+                                                                                        preReward: Number(document.getElementById(`preR_${m.id}`).value),
+                                                                                    })}
+                                                                                    className="px-2 py-1 bg-indigo-600 text-white rounded text-[9px] hover:bg-indigo-700 transition-colors uppercase font-black"
+                                                                                >
+                                                                                    Update
+                                                                                </button>
+                                                                            </td>
+                                                                        </tr>
+                                                                    ))}
+                                                                </tbody>
+                                                            </table>
+                                                        </div>
+                                                        <p className="mt-3 text-[9px] text-slate-400 font-medium italic">* 마스터 관리자는 모든 매장의 영업자명과 매장명을 일괄 확인하고 요금 정책을 강제 업데이트할 수 있습니다.</p>
+                                                    </div>
+                                                )}
                                             </div>
                                         </div>
                                     )}
