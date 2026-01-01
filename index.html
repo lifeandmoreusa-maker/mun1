@@ -56,6 +56,7 @@
     <script type="text/babel">
         const { useState, useEffect, useMemo } = React;
 
+        // 아이콘 컴포넌트
         const Icon = ({ name, size = 24, className = "" }) => {
             const icons = {
                 "loader": <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="spinner"><path d="M21 12a9 9 0 1 1-6.219-8.56" /></svg>,
@@ -73,7 +74,8 @@
                 "share": <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>,
                 "clipboard-check": <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="m9 14 2 2 4-4"/></svg>,
                 "save": <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>,
-                "edit": <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                "edit": <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>,
+                "calendar": <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
             };
             return <span className={`inline-block ${className}`} style={{ width: size, height: size }}>{icons[name] || null}</span>;
         };
@@ -105,8 +107,9 @@
             const [leads, setLeads] = useState([]);
             const [activeTab, setActiveTab] = useState("list");
             
+            // 필터링 상태 (년월 필터 yearMonth 추가)
             const [filters, setFilters] = useState({
-                merchantId: "", tier: "", isConsulted: "all", isFake: "all", isRewardPaid: "all", marketerName: ""
+                merchantId: "", tier: "", isConsulted: "all", isFake: "all", isRewardPaid: "all", marketerName: "", yearMonth: ""
             });
 
             const [config, setConfig] = useState({
@@ -136,6 +139,7 @@
             const appId = 'locallink-final-v2';
             const theme = THEMES[config.themeType] || THEMES.general;
 
+            // 정산 계산 유틸리티
             const getCalculatedReward = (lead) => {
                 if (lead.isFake) return { owner: 0, platform: 0, marketer: 0 };
                 const base = (Number(lead.sellingPrice) || 0) - (Number(lead.customerReward) || 0);
@@ -181,6 +185,7 @@
                 }
             }, [view, adminType, user, config.merchantId]);
 
+            // 필터링 적용 로직 (년월 필터 포함)
             const filteredLeads = useMemo(() => {
                 return leads.filter(l => {
                     const midMatch = (l.merchantId || "").toLowerCase().includes(filters.merchantId.toLowerCase());
@@ -189,7 +194,17 @@
                     const fakeMatch = filters.isFake === "all" || String(l.isFake) === filters.isFake;
                     const paidMatch = filters.isRewardPaid === "all" || String(l.isRewardPaid) === filters.isRewardPaid;
                     const marketerMatch = (l.marketerName || "").toLowerCase().includes(filters.marketerName.toLowerCase());
-                    return midMatch && tierMatch && consultedMatch && fakeMatch && paidMatch && marketerMatch;
+                    
+                    // 년월 필터 로직
+                    let ymMatch = true;
+                    if (filters.yearMonth && l.createdAt?.toDate) {
+                        const date = l.createdAt.toDate();
+                        const y = date.getFullYear();
+                        const m = String(date.getMonth() + 1).padStart(2, '0');
+                        ymMatch = `${y}-${m}` === filters.yearMonth;
+                    }
+
+                    return midMatch && tierMatch && consultedMatch && fakeMatch && paidMatch && marketerMatch && ymMatch;
                 });
             }, [leads, filters]);
 
@@ -250,7 +265,10 @@
                 const rows = filteredLeads.map((l, i) => {
                     const date = l.createdAt?.toDate() ? l.createdAt.toDate().toISOString().split('T')[0] : "-";
                     const rewards = getCalculatedReward(l);
-                    return [filteredLeads.length - i, date, l.name, l.birth, l.phone, l.region, l.tier, l.category, l.interest, l.merchantName, l.marketerName, l.sellingPrice, l.customerReward, rewards.owner, rewards.platform, rewards.marketer, l.isConsulted ? "완료" : "대기", l.isFake ? "허위" : "정상", l.isRewardPaid ? "지급완료" : "지급대기"].map(val => `"${val}"`).join(",");
+                    return [
+                        filteredLeads.length - i, date, l.name, l.birth, l.phone, l.region, l.tier, l.category, l.interest,
+                        l.merchantName, l.marketerName, l.sellingPrice, l.customerReward, rewards.owner, rewards.platform, rewards.marketer, l.isConsulted ? "완료" : "대기", l.isFake ? "허위" : "정상", l.isRewardPaid ? "지급완료" : "지급대기"
+                    ].map(val => `"${val}"`).join(",");
                 });
                 const summaryRow = ["", "합계", "", "", "", "", "", "", "", "", "", "", "", totals.owner, totals.platform, totals.marketer, "", "", ""].map(val => `"${val}"`).join(",");
                 const csvContent = "\uFEFF" + [headers.join(","), ...rows, summaryRow].join("\n");
@@ -258,7 +276,7 @@
                 const url = URL.createObjectURL(blob);
                 const link = document.createElement("a");
                 link.setAttribute("href", url);
-                link.setAttribute("download", `로컬링크_정산데이터_${new Date().toISOString().split('T')[0]}.csv`);
+                link.setAttribute("download", `로컬링크_정산데이터_${filters.yearMonth || new Date().toISOString().split('T')[0]}.csv`);
                 document.body.appendChild(link);
                 link.click();
                 document.body.removeChild(link);
@@ -347,7 +365,7 @@
                                 )}
                                 {step === 1 && (
                                     <div className="p-8 animate-fade-in">
-                                        <button onClick={() => setStep(0)} className="mb-6 text-slate-400 flex items-center gap-1 font-bold text-xs"><Icon name="arrow-left" size={14}/> 이전으로</button>
+                                        <button onClick={() => setStep(0)} className="mb-6 text-slate-400 flex items-center gap-1 font-bold text-xs hover:text-slate-600 transition-colors"><Icon name="arrow-left" size={14}/> 이전으로</button>
                                         <h2 className="text-2xl font-black text-slate-900 mb-8 italic uppercase tracking-tighter underline decoration-indigo-500 decoration-4">Data Indexing</h2>
                                         <p className="text-[13px] font-bold text-slate-500 mb-8 ml-0.5">본인의 데이터 그룹을 선택해 주세요.</p>
                                         <div className="grid grid-cols-2 gap-3 mb-10">
@@ -408,105 +426,44 @@
                                     <header className="flex justify-between items-center mb-6 w-full"><div className="flex flex-col"><h1 className="text-2xl font-black italic underline decoration-indigo-500 decoration-[6px]">Control Center</h1><span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{adminType === 'master' ? 'Master Admin' : `Merchant: ${config.merchantId}`}</span></div><div className="flex gap-2"><button onClick={() => setActiveTab("list")} className={`px-4 py-2 rounded-full text-[10px] font-black ${activeTab === 'list' ? 'bg-slate-900 text-white' : 'bg-white text-slate-400'}`}>Leads ({filteredLeads.length})</button><button onClick={() => setActiveTab("settings")} className={`px-4 py-2 rounded-full text-[10px] font-black ${activeTab === 'settings' ? 'bg-slate-900 text-white' : 'bg-white text-slate-400'}`}>Settings</button><button onClick={() => { setAdminType(null); setView('survey'); }} className="px-4 py-2 bg-rose-50 text-rose-500 rounded-full text-[10px] font-black uppercase">Logout</button></div></header>
                                     {activeTab === 'list' ? (
                                         <div className="space-y-4 animate-fade-in">
+                                            {/* 필터 영역 (년월 필터 추가) */}
                                             <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-100 flex flex-wrap gap-6 items-end justify-between"><div className="flex flex-wrap gap-4 items-end">
-                                                    {adminType === 'master' && (<><div className="w-32"><label className="text-[9px] font-black text-slate-400 block mb-1">매장 ID</label><input className="w-full p-2 bg-slate-50 rounded-lg text-[11px] font-bold border border-slate-100" value={filters.merchantId} onChange={e => setFilters({...filters, merchantId: e.target.value})} placeholder="ID 입력" /></div><div className="w-32"><label className="text-[9px] font-black text-emerald-600 block mb-1">영업자</label><input className="w-full p-2 bg-emerald-50 rounded-lg text-[11px] font-bold border border-emerald-100" value={filters.marketerName} onChange={e => setFilters({...filters, marketerName: e.target.value})} placeholder="영업자명" /></div></>)}
+                                                    {adminType === 'master' && (<><div className="w-32"><label className="text-[9px] font-black text-slate-400 block mb-1">매장 ID</label><input className="w-full p-2 bg-slate-50 rounded-lg text-[11px] font-bold border border-slate-100" value={filters.merchantId} onChange={e => setFilters({...filters, merchantId: e.target.value})} placeholder="ID 입력" /></div></>)}
+                                                    
+                                                    {/* 년월 필터 (매장 ID 옆 배치) */}
+                                                    <div className="w-40">
+                                                        <label className="text-[9px] font-black text-indigo-600 block mb-1 uppercase flex items-center gap-1"><Icon name="calendar" size={10} /> 접수년월 필터</label>
+                                                        <input type="month" className="w-full p-2 bg-indigo-50/50 rounded-lg text-[11px] font-black border border-indigo-100" value={filters.yearMonth} onChange={e => setFilters({...filters, yearMonth: e.target.value})} />
+                                                    </div>
+
                                                     <div className="w-24"><label className="text-[9px] font-black text-slate-400 block mb-1">등급</label><select className="w-full p-2 bg-slate-50 rounded-lg text-[11px] font-bold border border-slate-100" value={filters.tier} onChange={e => setFilters({...filters, tier: e.target.value})}><option value="">전체</option><option value="standard">Standard</option><option value="premium">Premium</option></select></div>
                                                     <div className="w-24"><label className="text-[9px] font-black text-slate-400 block mb-1">상담여부</label><select className="w-full p-2 bg-slate-50 rounded-lg text-[11px] font-bold border border-slate-100" value={filters.isConsulted} onChange={e => setFilters({...filters, isConsulted: e.target.value})}><option value="all">전체</option><option value="true">완료</option><option value="false">대기</option></select></div>
                                                     <div className="w-24"><label className="text-[9px] font-black text-slate-400 block mb-1">허위여부</label><select className="w-full p-2 bg-slate-50 rounded-lg text-[11px] font-bold border border-slate-100" value={filters.isFake} onChange={e => setFilters({...filters, isFake: e.target.value})}><option value="all">전체</option><option value="true">허위</option><option value="false">정상</option></select></div>
                                                     <div className="w-24"><label className="text-[9px] font-black text-slate-400 block mb-1">지급상태</label><select className="w-full p-2 bg-slate-50 rounded-lg text-[11px] font-bold border border-slate-100" value={filters.isRewardPaid} onChange={e => setFilters({...filters, isRewardPaid: e.target.value})}><option value="all">전체</option><option value="true">지급완료</option><option value="false">지급대기</option></select></div>
                                                 </div><button onClick={handleExportExcel} className="bg-slate-900 text-white px-6 py-2 rounded-xl text-[10px] font-black uppercase flex items-center gap-2 shadow-lg h-[35px] hover:bg-black transition-all"><Icon name="share" size={14}/> Excel Export</button></div>
-                                            <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-100 w-full overflow-hidden"><div className="admin-table-container"><table className="w-full text-left text-[11px] font-bold"><thead className="bg-slate-900 text-white text-[9px] font-black uppercase italic"><tr><th className="p-4 w-12">No.</th><th className="p-4">접수일</th><th className="p-4">고객/연락처</th><th className="p-4">등급/지역</th><th className="p-4">매장 ID</th><th className="p-4">영업자</th><th className="p-4">상담/허위</th><th className="p-4">리워드 정산</th><th className="p-4">지급상태</th></tr></thead>
-                                                        <tbody>{filteredLeads.map((l, i) => { const rewards = getCalculatedReward(l); const dateOnly = l.createdAt?.toDate() ? l.createdAt.toDate().toISOString().split('T')[0] : "-"; return (<tr key={l.id} className={`border-b border-slate-50 ${l.isFake ? 'bg-rose-50 opacity-60' : ''}`}><td className="p-4 text-slate-400 italic">{filteredLeads.length - i}</td><td className="p-4 text-slate-500 font-medium">{dateOnly}</td><td className="p-4">{l.name}<br/><span className="text-slate-400 font-medium">{l.phone}</span></td><td className="p-4 uppercase">{l.tier}<br/><span className="text-slate-400 font-medium">{l.region}</span></td><td className="p-4 font-black text-indigo-600 italic">{l.merchantId}</td><td className="p-4 text-emerald-600 font-black italic">{l.marketerName}</td><td className="p-4 space-y-1"><label className="flex items-center gap-1 cursor-pointer"><input type="checkbox" checked={l.isConsulted} onChange={(e) => handleStatusUpdate(l.id, 'isConsulted', e.target.checked)} /> 상담완료</label><label className="flex items-center gap-1 cursor-pointer text-rose-500"><input type="checkbox" checked={l.isFake} onChange={(e) => handleStatusUpdate(l.id, 'isFake', e.target.checked)} /> 허위정보</label></td><td className="p-4"><div className="flex flex-col gap-0.5"><span className="text-indigo-600 font-black">매장: {rewards.owner.toLocaleString()}원</span><span className="text-slate-500 text-[10px]">플랫폼: {rewards.platform.toLocaleString()}원</span><span className="text-emerald-600 text-[10px]">영업: {rewards.marketer.toLocaleString()}원</span></div></td><td className="p-4"><button onClick={() => handleStatusUpdate(l.id, 'isRewardPaid', !l.isRewardPaid)} className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase transition-colors ${l.isRewardPaid ? 'bg-emerald-500 text-white shadow-md' : 'bg-slate-100 text-slate-400 hover:bg-slate-200'}`}>{l.isRewardPaid ? '지급완료' : '지급대기'}</button></td></tr>);})}</tbody></table></div>
-                                                <div className="mt-6 p-6 bg-slate-900 rounded-2xl flex flex-wrap justify-between items-center text-white gap-6"><div className="flex flex-wrap gap-8"><div><p className="text-[10px] font-black text-slate-400 uppercase mb-1">Total Count</p><p className="text-xl font-black italic">{filteredLeads.length} 건</p></div><div className="border-l border-white/10 pl-8"><p className="text-[10px] font-black text-indigo-400 uppercase mb-1">Total Merchant</p><p className="text-xl font-black text-indigo-400">{totals.owner.toLocaleString()} 원</p></div><div className="border-l border-white/10 pl-8"><p className="text-[10px] font-black text-slate-300 uppercase mb-1">Total Platform</p><p className="text-xl font-black text-white">{totals.platform.toLocaleString()} 원</p></div><div className="border-l border-white/10 pl-8"><p className="text-[10px] font-black text-emerald-400 uppercase mb-1">Total Marketer</p><p className="text-xl font-black text-emerald-400">{totals.marketer.toLocaleString()} 원</p></div></div><div className="text-right"><p className="text-[9px] text-white/30 italic font-medium">* 필터링된 {filteredLeads.length}건 합계</p>{filters.marketerName && <p className="text-[10px] text-emerald-400 font-bold mt-1">영업자({filters.marketerName}) 수익 총계: {totals.marketer.toLocaleString()} 원</p>}</div></div></div></div>
+                                            <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-100 w-full overflow-hidden"><div className="admin-table-container"><table className="w-full text-left text-[11px] font-bold"><thead className="bg-slate-900 text-white text-[9px] font-black uppercase italic"><tr><th className="p-4 w-12">No.</th><th className="p-4">접수일</th><th className="p-4">고객/연락처</th><th className="p-4">등급/지역</th><th className="p-4">매장 ID</th><th className="p-4">상담/허위</th><th className="p-4">리워드 정산</th><th className="p-4">지급상태</th></tr></thead>
+                                                        <tbody>{filteredLeads.map((l, i) => { const rewards = getCalculatedReward(l); const dateOnly = l.createdAt?.toDate() ? l.createdAt.toDate().toISOString().split('T')[0] : "-"; return (<tr key={l.id} className={`border-b border-slate-50 ${l.isFake ? 'bg-rose-50 opacity-60' : ''}`}><td className="p-4 text-slate-400 italic">{filteredLeads.length - i}</td><td className="p-4 text-slate-500 font-medium">{dateOnly}</td><td className="p-4">{l.name}<br/><span className="text-slate-400 font-medium">{l.phone}</span></td><td className="p-4 uppercase">{l.tier}<br/><span className="text-slate-400 font-medium">{l.region}</span></td><td className="p-4 font-black text-indigo-600 italic">{l.merchantId}</td><td className="p-4 space-y-1"><label className="flex items-center gap-1 cursor-pointer"><input type="checkbox" checked={l.isConsulted} onChange={(e) => handleStatusUpdate(l.id, 'isConsulted', e.target.checked)} /> 상담완료</label><label className="flex items-center gap-1 cursor-pointer text-rose-500"><input type="checkbox" checked={l.isFake} onChange={(e) => handleStatusUpdate(l.id, 'isFake', e.target.checked)} /> 허위정보</label></td><td className="p-4"><div className="flex flex-col gap-0.5"><span className="text-indigo-600 font-black">매장: {rewards.owner.toLocaleString()}원</span><span className="text-slate-500 text-[10px]">플랫폼: {rewards.platform.toLocaleString()}원</span><span className="text-emerald-600 text-[10px]">영업: {rewards.marketer.toLocaleString()}원</span></div></td><td className="p-4"><button onClick={() => handleStatusUpdate(l.id, 'isRewardPaid', !l.isRewardPaid)} className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase transition-colors ${l.isRewardPaid ? 'bg-emerald-500 text-white shadow-md' : 'bg-slate-100 text-slate-400 hover:bg-slate-200'}`}>{l.isRewardPaid ? '지급완료' : '지급대기'}</button></td></tr>);})}</tbody></table></div>
+                                                <div className="mt-6 p-6 bg-slate-900 rounded-2xl flex flex-wrap justify-between items-center text-white gap-6"><div className="flex flex-wrap gap-8"><div><p className="text-[10px] font-black text-slate-400 uppercase mb-1">Total Count</p><p className="text-xl font-black italic">{filteredLeads.length} 건</p></div><div className="border-l border-white/10 pl-8"><p className="text-[10px] font-black text-indigo-400 uppercase mb-1">Total Merchant</p><p className="text-xl font-black text-indigo-400">{totals.owner.toLocaleString()} 원</p></div><div className="border-l border-white/10 pl-8"><p className="text-[10px] font-black text-slate-300 uppercase mb-1">Total Platform</p><p className="text-xl font-black text-white">{totals.platform.toLocaleString()} 원</p></div><div className="border-l border-white/10 pl-8"><p className="text-[10px] font-black text-emerald-400 uppercase mb-1">Total Marketer</p><p className="text-xl font-black text-emerald-400">{totals.marketer.toLocaleString()} 원</p></div></div><div className="text-right"><p className="text-[9px] text-white/30 italic font-medium">* {filters.yearMonth ? `${filters.yearMonth} 검색 결과` : '전체 기간'} 합계</p></div></div></div></div>
                                     ) : (
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full animate-fade-in pb-20">
                                             <div className="bg-white p-8 rounded-3xl shadow-sm border border-slate-100 h-fit">
                                                 <h3 className="font-black mb-6 italic text-indigo-600 uppercase tracking-tighter">Category & Theme Settings</h3>
                                                 <div className="space-y-6">
-                                                    {/* 카테고리 선택 */}
-                                                    <div className="p-5 bg-slate-900 rounded-3xl">
-                                                        <p className="text-[10px] font-black text-indigo-400 uppercase italic mb-3 flex items-center gap-1.5"><Icon name="settings" size={12}/> 매장 카테고리 선택</p>
-                                                        <div className="flex gap-2">
-                                                            <button onClick={() => setConfig({...config, themeType: 'general'})} className={`flex-1 p-4 rounded-2xl font-black text-[10px] uppercase transition-all ${config.themeType === 'general' ? 'bg-indigo-600 text-white shadow-lg' : 'bg-white/5 text-white/30 border border-white/10'}`}>카테고리 1 (일반매장)</button>
-                                                            <button onClick={() => setConfig({...config, themeType: 'medical'})} className={`flex-1 p-4 rounded-2xl font-black text-[10px] uppercase transition-all ${config.themeType === 'medical' ? 'bg-emerald-600 text-white shadow-lg' : 'bg-white/5 text-white/30 border border-white/10'}`}>카테고리 2 (병원/약국)</button>
-                                                        </div>
+                                                    <div className="p-5 bg-slate-900 rounded-3xl"><p className="text-[10px] font-black text-indigo-400 uppercase italic mb-3 flex items-center gap-1.5"><Icon name="settings" size={12}/> 매장 카테고리 선택</p><div className="flex gap-2"><button onClick={() => setConfig({...config, themeType: 'general'})} className={`flex-1 p-4 rounded-2xl font-black text-[10px] uppercase transition-all ${config.themeType === 'general' ? 'bg-indigo-600 text-white shadow-lg' : 'bg-white/5 text-white/30 border border-white/10'}`}>카테고리 1 (일반매장)</button><button onClick={() => setConfig({...config, themeType: 'medical'})} className={`flex-1 p-4 rounded-2xl font-black text-[10px] uppercase transition-all ${config.themeType === 'medical' ? 'bg-emerald-600 text-white shadow-lg' : 'bg-white/5 text-white/30 border border-white/10'}`}>카테고리 2 (병원/약국)</button></div></div>
+                                                    <div className="space-y-4"><h4 className="text-[11px] font-black text-slate-800 uppercase flex items-center gap-1.5 border-b pb-2"><Icon name="edit" size={12}/> Content Customization</h4>
+                                                        {config.themeType === 'general' ? (<><div><label className="text-[10px] font-black text-slate-400 ml-1 uppercase mb-1 block">Main Title (일반 매장)</label><input className="w-full p-4 bg-slate-50 border border-slate-100 rounded-xl font-bold text-xs" value={config.heroTitle} onChange={e => setConfig({...config, heroTitle: e.target.value})} /></div><div><label className="text-[10px] font-black text-slate-400 ml-1 uppercase mb-1 block">Sub Text (일반 매장)</label><textarea className="w-full p-4 bg-slate-50 border border-slate-100 rounded-xl font-bold text-xs h-20 resize-none" value={config.heroSubText} onChange={e => setConfig({...config, heroSubText: e.target.value})} /></div><div><label className="text-[10px] font-black text-indigo-600 ml-1 uppercase mb-1 block">사장님의 편지 (감사 멘트)</label><textarea className="w-full p-4 bg-indigo-50 border border-indigo-100 rounded-xl font-bold text-xs h-24 resize-none" value={config.generalThanks} onChange={e => setConfig({...config, generalThanks: e.target.value})} /></div></>) : (<><div><label className="text-[10px] font-black text-emerald-600 ml-1 uppercase mb-1 block">Main Title (병원/약국)</label><input className="w-full p-4 bg-emerald-50 border border-emerald-100 rounded-xl font-bold text-xs" value={config.heroTitleMedical} onChange={e => setConfig({...config, heroTitleMedical: e.target.value})} /></div><div><label className="text-[10px] font-black text-emerald-600 ml-1 uppercase mb-1 block">Sub Text (병원/약국)</label><textarea className="w-full p-4 bg-emerald-50 border border-emerald-100 rounded-xl font-bold text-xs h-24 resize-none" value={config.heroSubTextMedical} onChange={e => setConfig({...config, heroSubTextMedical: e.target.value})} /></div><div><label className="text-[10px] font-black text-emerald-700 ml-1 uppercase mb-1 block">원장님의 편지 (감사 멘트)</label><textarea className="w-full p-4 bg-emerald-100/50 border border-emerald-200 rounded-xl font-bold text-xs h-24 resize-none" value={config.medicalThanks} onChange={e => setConfig({...config, medicalThanks: e.target.value})} /></div></>)}
                                                     </div>
-
-                                                    {/* 텍스트 및 감사 편지 수정 기능 추가 */}
-                                                    <div className="space-y-4">
-                                                        <h4 className="text-[11px] font-black text-slate-800 uppercase flex items-center gap-1.5 border-b pb-2"><Icon name="edit" size={12}/> Content Customization</h4>
-                                                        
-                                                        {/* 일반 매장용 제목/설명 */}
-                                                        {config.themeType === 'general' ? (
-                                                            <>
-                                                                <div>
-                                                                    <label className="text-[10px] font-black text-slate-400 ml-1 uppercase mb-1 block">Main Title (일반 매장)</label>
-                                                                    <input className="w-full p-4 bg-slate-50 border border-slate-100 rounded-xl font-bold text-xs" value={config.heroTitle} onChange={e => setConfig({...config, heroTitle: e.target.value})} />
-                                                                </div>
-                                                                <div>
-                                                                    <label className="text-[10px] font-black text-slate-400 ml-1 uppercase mb-1 block">Sub Text (일반 매장)</label>
-                                                                    <textarea className="w-full p-4 bg-slate-50 border border-slate-100 rounded-xl font-bold text-xs h-20 resize-none" value={config.heroSubText} onChange={e => setConfig({...config, heroSubText: e.target.value})} />
-                                                                </div>
-                                                                <div>
-                                                                    <label className="text-[10px] font-black text-indigo-600 ml-1 uppercase mb-1 block">사장님의 편지 (감사 멘트)</label>
-                                                                    <textarea className="w-full p-4 bg-indigo-50 border border-indigo-100 rounded-xl font-bold text-xs h-24 resize-none" value={config.generalThanks} onChange={e => setConfig({...config, generalThanks: e.target.value})} />
-                                                                </div>
-                                                            </>
-                                                        ) : (
-                                                            /* 병원/약국용 제목/설명/편지 */
-                                                            <>
-                                                                <div>
-                                                                    <label className="text-[10px] font-black text-emerald-600 ml-1 uppercase mb-1 block">Main Title (병원/약국)</label>
-                                                                    <input className="w-full p-4 bg-emerald-50 border border-emerald-100 rounded-xl font-bold text-xs" value={config.heroTitleMedical} onChange={e => setConfig({...config, heroTitleMedical: e.target.value})} />
-                                                                </div>
-                                                                <div>
-                                                                    <label className="text-[10px] font-black text-emerald-600 ml-1 uppercase mb-1 block">Sub Text (병원/약국)</label>
-                                                                    <textarea className="w-full p-4 bg-emerald-50 border border-emerald-100 rounded-xl font-bold text-xs h-24 resize-none" value={config.heroSubTextMedical} onChange={e => setConfig({...config, heroSubTextMedical: e.target.value})} />
-                                                                </div>
-                                                                <div>
-                                                                    <label className="text-[10px] font-black text-emerald-700 ml-1 uppercase mb-1 block">원장님의 편지 (감사 멘트)</label>
-                                                                    <textarea className="w-full p-4 bg-emerald-100/50 border border-emerald-200 rounded-xl font-bold text-xs h-24 resize-none" value={config.medicalThanks} onChange={e => setConfig({...config, medicalThanks: e.target.value})} />
-                                                                </div>
-                                                            </>
-                                                        )}
-                                                    </div>
-
-                                                    <div className="p-4 bg-indigo-50 rounded-2xl border border-indigo-100">
-                                                        <p className="text-[10px] font-black text-indigo-600 uppercase mb-3 flex items-center gap-1.5">보상 전달 방식</p>
-                                                        <div className="flex gap-2">
-                                                            <button onClick={() => setConfig({...config, deliveryType: 'direct'})} className={`flex-1 p-3 rounded-xl font-black text-[10px] uppercase transition-all ${config.deliveryType === 'direct' ? 'bg-indigo-600 text-white shadow-md' : 'bg-white text-slate-400'}`}>플랫폼 직접 전송</button>
-                                                            <button onClick={() => setConfig({...config, deliveryType: 'owner'})} className={`flex-1 p-3 rounded-xl font-black text-[10px] uppercase transition-all ${config.deliveryType === 'owner' ? 'bg-indigo-600 text-white shadow-md' : 'bg-white text-slate-400'}`}>사장님 통해 전달</button>
-                                                        </div>
-                                                    </div>
-                                                    
-                                                    <div className="grid grid-cols-2 gap-4">
-                                                        <div><label className="text-[10px] font-black text-slate-400 ml-1 uppercase mb-2 block">Merchant Name</label><input className="w-full p-4 bg-slate-50 border border-slate-100 rounded-xl font-bold text-xs" value={config.merchantName} onChange={e => setConfig({...config, merchantName: e.target.value})} /></div>
-                                                        <div><label className="text-[10px] font-black text-slate-400 ml-1 uppercase mb-2 block">영업자명</label><input className="w-full p-4 bg-slate-50 border border-slate-100 rounded-xl font-bold text-xs" value={config.marketerName} onChange={e => setConfig({...config, marketerName: e.target.value})} /></div>
-                                                    </div>
-
+                                                    <div className="p-4 bg-indigo-50 rounded-2xl border border-indigo-100"><p className="text-[10px] font-black text-indigo-600 uppercase mb-3 flex items-center gap-1.5">보상 전달 방식</p><div className="flex gap-2"><button onClick={() => setConfig({...config, deliveryType: 'direct'})} className={`flex-1 p-3 rounded-xl font-black text-[10px] uppercase transition-all ${config.deliveryType === 'direct' ? 'bg-indigo-600 text-white shadow-md' : 'bg-white text-slate-400'}`}>플랫폼 직접 전송</button><button onClick={() => setConfig({...config, deliveryType: 'owner'})} className={`flex-1 p-3 rounded-xl font-black text-[10px] uppercase transition-all ${config.deliveryType === 'owner' ? 'bg-indigo-600 text-white shadow-md' : 'bg-white text-slate-400'}`}>사장님 통해 전달</button></div></div>
+                                                    <div className="grid grid-cols-2 gap-4"><div><label className="text-[10px] font-black text-slate-400 ml-1 uppercase mb-2 block">Merchant Name</label><input className="w-full p-4 bg-slate-50 border border-slate-100 rounded-xl font-bold text-xs" value={config.merchantName} onChange={e => setConfig({...config, merchantName: e.target.value})} /></div><div><label className="text-[10px] font-black text-slate-400 ml-1 uppercase mb-2 block">영업자명</label><input className="w-full p-4 bg-slate-50 border border-slate-100 rounded-xl font-bold text-xs" value={config.marketerName} onChange={e => setConfig({...config, marketerName: e.target.value})} /></div></div>
                                                     <button onClick={handleSaveConfig} className="w-full bg-slate-900 text-white py-4 rounded-2xl font-black text-xs uppercase shadow-xl flex items-center justify-center gap-2 hover:bg-black transition-all"><Icon name="save" size={16}/> Save All Category Settings</button>
                                                 </div>
                                             </div>
-
                                             <div className="bg-white p-8 rounded-3xl shadow-sm border border-slate-100 h-fit">
                                                 <h3 className="font-black mb-6 italic text-rose-600 uppercase tracking-tighter">Pricing & Security</h3>
                                                 <div className="space-y-6">
-                                                    <div className="grid grid-cols-2 gap-4">
-                                                        <div><label className="text-[10px] font-black text-indigo-600 ml-1 uppercase mb-2 block italic">Std Price (판매가)</label><input type="number" className="w-full p-4 bg-indigo-50 border-indigo-100 rounded-xl font-black text-xs" value={config.stdPrice} onChange={e => setConfig({...config, stdPrice: Number(e.target.value)})} /></div>
-                                                        <div><label className="text-[10px] font-black text-teal-600 ml-1 uppercase mb-2 block italic">Pre Price (판매가)</label><input type="number" className="w-full p-4 bg-teal-50 border-teal-100 rounded-xl font-black text-xs" value={config.prePrice} onChange={e => setConfig({...config, prePrice: Number(e.target.value)})} /></div>
-                                                    </div>
-                                                    
-                                                    <div className="p-6 bg-rose-50 rounded-3xl border border-rose-100">
-                                                        <label className="text-[10px] font-black text-rose-600 ml-1 uppercase mb-2 block italic tracking-widest">Change Account Password</label>
-                                                        <input type="password" id="new_pw" placeholder="Enter New Password" onKeyDown={(e) => e.key === 'Enter' && handleUpdatePassword(e.target.value)} className="w-full p-4 bg-white border border-rose-100 rounded-xl font-bold text-xs mb-4 outline-none focus:ring-2 focus:ring-rose-500" />
-                                                        <button onClick={() => handleUpdatePassword(document.getElementById('new_pw').value)} className="w-full bg-rose-500 text-white py-4 rounded-2xl font-black text-xs uppercase shadow-lg hover:bg-rose-600 transition-all">Update Access Key</button>
-                                                    </div>
-
-                                                    <div className="p-6 bg-slate-900 rounded-3xl">
-                                                        <p className="text-[10px] font-black text-indigo-400 uppercase italic mb-2 tracking-widest underline decoration-indigo-400">Account / QR ID</p>
-                                                        <input className="w-full p-4 bg-white/5 border border-white/10 rounded-2xl font-bold text-white mb-4 outline-none" value={config.merchantId} disabled={adminType !== 'master'} onChange={e => setConfig({...config, merchantId: e.target.value})} />
-                                                        <button onClick={handleSaveConfig} className="w-full bg-indigo-600 text-white py-4 rounded-2xl font-black text-xs uppercase shadow-xl flex items-center justify-center gap-2 hover:bg-indigo-500 transition-all"><Icon name="save" size={16}/> Sync ID</button>
-                                                    </div>
+                                                    <div className="grid grid-cols-2 gap-4"><div><label className="text-[10px] font-black text-indigo-600 ml-1 uppercase mb-2 block italic">Std Price (판매가)</label><input type="number" className="w-full p-4 bg-indigo-50 border-indigo-100 rounded-xl font-black text-xs" value={config.stdPrice} onChange={e => setConfig({...config, stdPrice: Number(e.target.value)})} /><label className="text-[9px] text-slate-400 mt-2 block ml-1">Std Reward (고객 리워드)</label><input type="number" className="w-full p-3 bg-slate-50 border border-slate-100 rounded-lg font-bold text-xs mt-1" value={config.stdReward} onChange={e => setConfig({...config, stdReward: Number(e.target.value)})} /></div><div><label className="text-[10px] font-black text-teal-600 ml-1 uppercase mb-2 block italic">Pre Price (판매가)</label><input type="number" className="w-full p-4 bg-teal-50 border-teal-100 rounded-xl font-black text-xs" value={config.prePrice} onChange={e => setConfig({...config, prePrice: Number(e.target.value)})} /><label className="text-[9px] text-slate-400 mt-2 block ml-1">Pre Reward (고객 리워드)</label><input type="number" className="w-full p-3 bg-slate-50 border border-slate-100 rounded-lg font-bold text-xs mt-1" value={config.preReward} onChange={e => setConfig({...config, preReward: Number(e.target.value)})} /></div></div>
+                                                    <div className="p-6 bg-rose-50 rounded-3xl border border-rose-100"><label className="text-[10px] font-black text-rose-600 ml-1 uppercase mb-2 block italic tracking-widest">Change Account Password</label><input type="password" id="new_pw" placeholder="Enter New Password" onKeyDown={(e) => e.key === 'Enter' && handleUpdatePassword(e.target.value)} className="w-full p-4 bg-white border border-rose-100 rounded-xl font-bold text-xs mb-4 outline-none focus:ring-2 focus:ring-rose-500" /><button onClick={() => handleUpdatePassword(document.getElementById('new_pw').value)} className="w-full bg-rose-500 text-white py-4 rounded-2xl font-black text-xs uppercase shadow-lg hover:bg-rose-600 transition-all">Update Access Key</button></div>
+                                                    <div className="p-6 bg-slate-900 rounded-3xl"><p className="text-[10px] font-black text-indigo-400 uppercase italic mb-2 tracking-widest underline decoration-indigo-400">Account / QR ID</p><input className="w-full p-4 bg-white/5 border border-white/10 rounded-2xl font-bold text-white mb-4 outline-none" value={config.merchantId} disabled={adminType !== 'master'} onChange={e => setConfig({...config, merchantId: e.target.value})} /><button onClick={handleSaveConfig} className="w-full bg-indigo-600 text-white py-4 rounded-2xl font-black text-xs uppercase shadow-xl flex items-center justify-center gap-2 hover:bg-indigo-500 transition-all"><Icon name="save" size={16}/> Sync ID</button></div>
                                                 </div>
                                             </div>
                                         </div>
