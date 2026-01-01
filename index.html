@@ -2,10 +2,7 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <!-- 다크모드 강제 방지 메타 태그 -->
-    <meta name="color-scheme" content="light">
-    <meta name="supported-color-schemes" content="light">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>로컬링크 파트너 - 데이터 보상 시스템</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
@@ -13,34 +10,7 @@
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@400;600;700;900&display=swap');
-        
-        /* 다크모드 환경에서도 라이트 모드 강제 고정 */
-        :root {
-            color-scheme: light !important;
-        }
-
-        body { 
-            font-family: 'Pretendard', sans-serif; 
-            background-color: #f8fafc !important; 
-            color: #1e293b !important;
-            margin: 0; 
-            -webkit-font-smoothing: antialiased;
-        }
-
-        /* 네이버/카카오 다크모드 강제 반전 방어 CSS */
-        @media (prefers-color-scheme: dark) {
-            body { 
-                background-color: #f8fafc !important; 
-                color: #1e293b !important; 
-            }
-            .bg-white { background-color: #ffffff !important; color: #1e293b !important; }
-            .bg-slate-50 { background-color: #f8fafc !important; }
-            .bg-slate-900 { background-color: #0f172a !important; color: #ffffff !important; }
-            .text-slate-900 { color: #0f172a !important; }
-            .text-slate-500 { color: #64748b !important; }
-            input, textarea { background-color: #ffffff !important; color: #000000 !important; }
-        }
-
+        body { font-family: 'Pretendard', sans-serif; background-color: #f8fafc; margin: 0; }
         .animate-fade-in { animation: fadeIn 0.5s ease-out forwards; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         .spinner { animation: spin 1s linear infinite; }
@@ -51,7 +21,6 @@
 <body>
     <div id="root"></div>
 
-    <!-- Firebase SDK 로드 -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
@@ -63,7 +32,6 @@
         };
     </script>
 
-    <!-- React 앱 로직 -->
     <script type="text/babel">
         const { useState, useEffect, useMemo } = React;
 
@@ -117,6 +85,7 @@
             const [leads, setLeads] = useState([]);
             const [activeTab, setActiveTab] = useState("list");
             
+            // 초기 설정값
             const [config, setConfig] = useState({
                 merchantId: "default", merchantName: "로컬링크 파트너", themeType: "general", marketerName: "본사",
                 marketerRecipient: "",
@@ -131,7 +100,7 @@
                 medicalThanks: "고객님의 소중한 데이터도 정당한 자산이 되어야 합니다. “원장님인” 제가 보증하는 로컬링크의 투명한 분석을 통해 본인 데이터 자산의 가치를 발견하시길 바랍니다. 지역 사회의 데이터 주권 보호를 위해 함께해주셔서 감사합니다.",
                 medicalNote: "* 본 안내는 의료 서비스 및 조제와 무관한 외부 데이터 제휴 프로그램입니다.",
                 generalThanks: "고객님의 소중한 데이터도 정당한 자산이 되어야 합니다. 사장인 제가 보증하는 로컬링크의 투명한 분석을 통해서 전문가를 통한 본인데이터 자산의 가치를 발견하고, 새로운 자산의 가치를 창출하시길 바랍니다.",
-                thirdPartyRecipient: "로컬링크 제휴 분석 전문가(보험설계사, 재무설계사, 경영지도사, 세무전문가, 법률전문가 등)",
+                thirdPartyRecipient: "로컬링크 제휴 분석 전문가(보험설계사, 경영지도사, 세무전문가, 등)",
                 thirdPartyPurpose: "데이터 유효성 검증 실사 및 개인별 최적화 경영/가계 솔루션 제안",
                 thirdPartyItems: "수집된 개인정보 및 설문 응답 데이터 일체",
                 contractIntro: "본 프로그램은 귀하의 경제 지표 데이터를 상업적으로 활용하는 대가로 보상을 지불하는 데이터 커머스 계약입니다.",
@@ -142,7 +111,7 @@
             const [formData, setFormData] = useState({ name: "", birth: "", phone: "", region: "", category: "", interest: "" });
             const [agreed, setAgreed] = useState({ collect: false, contract: false });
 
-            const appId = 'locallink-final-v2';
+            const appId = typeof __app_id !== 'undefined' ? __app_id : 'locallink-final-v2';
             const theme = THEMES[config.themeType] || THEMES.general;
 
             useEffect(() => {
@@ -286,7 +255,7 @@
             return (
                 <div className="min-h-screen flex flex-col items-center overflow-x-hidden">
                     {view === 'survey' ? (
-                        <div className="w-full max-w-md bg-white min-h-screen flex flex-col relative shadow-2xl">
+                        <div className="w-full max-md bg-white min-h-screen flex flex-col relative shadow-2xl">
                             {step === 0 && (
                                 <div className="flex-1 animate-fade-in pb-10">
                                     <div className="p-8 pt-12 bg-slate-50 border-b border-slate-100 rounded-b-[2.5rem]">
@@ -331,6 +300,7 @@
                                                 <Icon name="chevron-right" className="text-slate-200" />
                                             </div>
                                         </button>
+                                        {/* 프리미엄 텍스트 색상 수정됨 (text-white 반영) */}
                                         <button onClick={() => { setTier('premium'); setStep(1); }} className="w-full p-6 bg-slate-900 text-white rounded-3xl text-left transition-all active:scale-95 shadow-xl">
                                             <div className="flex justify-between items-start mb-4">
                                                 <div className={`p-3 ${theme.bg} text-white rounded-xl shadow-lg`}><Icon name="gem" size={24}/></div>
@@ -349,7 +319,7 @@
                                         <div className={`mt-8 p-6 ${theme.light} border-2 ${theme.border} border-dashed rounded-[2rem] animate-fade-in relative`}>
                                             <div className={`absolute -top-3 left-6 px-3 py-1 bg-white border ${theme.border} rounded-full flex items-center gap-1.5`}>
                                                 <Icon name="send" size={10} className={theme.text} />
-                                                <span className={`text-[10px] font-black ${theme.text} uppercase tracking-[0.1em]`}>{config.themeType === 'medical' ? '원장님' : '사장님'}의 편지</span>
+                                                <span className={`text-[10px] font-black ${theme.text} uppercase tracking-tighter tracking-[0.1em]`}>{config.themeType === 'medical' ? '원장님' : '사장님'}의 편지</span>
                                             </div>
                                             <p className="text-[13px] font-bold leading-relaxed text-slate-700 break-keep italic text-center">
                                                 "{config.themeType === 'medical' ? config.medicalThanks : config.generalThanks}"
@@ -367,13 +337,16 @@
                             {step === 1 && (
                                 <div className="flex-1 p-8 animate-fade-in">
                                     <button onClick={() => setStep(0)} className="mb-6 text-slate-400 flex items-center gap-1 font-bold text-xs hover:text-slate-600 transition-colors"><Icon name="arrow-left" size={14}/> 이전으로</button>
+                                    
                                     <h2 className="text-2xl font-black text-slate-900 mb-1 italic uppercase tracking-tighter">Data Indexing</h2>
                                     <p className="text-[13px] font-bold text-slate-500 mb-8 ml-0.5">본인의 데이터 그룹을 선택해 주세요.</p>
+                                    
                                     <div className="grid grid-cols-2 gap-3 mb-10">
                                         {(tier === 'standard' ? config.stdOptions.split(',') : config.preOptions.split(',')).map(c => (
                                             <button key={c} onClick={() => setFormData({...formData, category: c.trim()})} className={`py-4 rounded-xl border-2 text-[12px] font-black transition-all ${formData.category === c.trim() ? `${theme.border} ${theme.light} ${theme.text}` : 'bg-slate-50 text-slate-400 border-transparent active:bg-slate-100'}`}>{c.trim()}</button>
                                         ))}
                                     </div>
+                                    
                                     <div className="space-y-4">
                                         <div className="ml-1">
                                             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 italic">Evaluation Target</p>
@@ -383,6 +356,7 @@
                                             <button key={q} onClick={() => setFormData({...formData, interest: q.trim()})} className={`w-full p-5 rounded-xl border-2 text-left text-[12px] font-bold transition-all break-keep ${formData.interest === q.trim() ? `${theme.border} ${theme.light} ${theme.text}` : 'bg-slate-50 text-slate-400 border-transparent active:bg-slate-100'}`}>{q.trim()}</button>
                                         ))}
                                     </div>
+                                    
                                     <button disabled={!formData.category || !formData.interest} onClick={() => setStep(2)} className={`mt-12 w-full ${theme.bg} text-white py-5 rounded-2xl font-black shadow-xl disabled:opacity-30 disabled:shadow-none active:scale-[0.98] transition-all uppercase tracking-widest`}>다음 단계로</button>
                                 </div>
                             )}
@@ -392,6 +366,7 @@
                                     <button onClick={() => setStep(1)} className="mb-6 text-slate-400 flex items-center gap-1 font-bold text-xs"><Icon name="arrow-left" size={14}/> 이전으로</button>
                                     <h2 className="text-2xl font-black text-slate-900 mb-2 italic">Contract</h2>
                                     <p className="text-slate-500 text-[13px] font-bold mb-6 break-keep">정확한 데이터 가치 산정을 위해 정보를 입력해 주세요.</p>
+                                    
                                     <div className="space-y-4 mb-8">
                                         <input type="text" placeholder="성함" className="w-full p-4 bg-slate-50 rounded-xl font-bold outline-none border-2 border-transparent focus:border-indigo-500" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} />
                                         <div className="grid grid-cols-2 gap-3">
@@ -400,6 +375,7 @@
                                         </div>
                                         <input type="text" placeholder="거주 지역 (시/군/구)" className="w-full p-4 bg-slate-50 rounded-xl font-bold outline-none border-2 border-transparent focus:border-indigo-500" value={formData.region} onChange={e => setFormData({...formData, region: e.target.value})} />
                                     </div>
+                                    
                                     <div className="space-y-4 mb-10">
                                         <div className="bg-slate-50 p-5 rounded-2xl border border-slate-100">
                                             <div className="flex items-center gap-3 mb-4 cursor-pointer" onClick={() => setAgreed({...agreed, collect: !agreed.collect})}>
@@ -454,6 +430,7 @@
                             <button onClick={() => setView('admin')} className="absolute bottom-0 left-0 w-full h-8 opacity-0 cursor-default">Admin</button>
                         </div>
                     ) : (
+                        // --- [관리자 모드] ---
                         <div className="w-full max-w-7xl bg-slate-50 min-h-screen p-6 flex flex-col items-center">
                             {isAdminAuth ? (
                                 <div className="w-full animate-fade-in">
@@ -584,9 +561,39 @@
                                                         <button onClick={handleSaveConfig} className="w-full bg-indigo-600 text-white py-4 rounded-2xl font-black text-xs uppercase shadow-xl flex items-center justify-center gap-2 hover:bg-indigo-500 transition-all"><Icon name="save" size={16}/> Sync ID & Settings</button>
                                                     </div>
                                                 </div>
+                                                <h3 className="font-black mt-10 mb-6 italic flex items-center gap-2 uppercase tracking-tighter text-emerald-600"><Icon name="lock" size={18}/> 3rd Party Data Consent</h3>
+                                                <div className="space-y-4">
+                                                    <div>
+                                                        <label className="text-[10px] font-black ml-1 text-slate-400 uppercase">제공받는 자</label>
+                                                        <input className="w-full p-4 bg-slate-50 border border-slate-100 rounded-xl font-bold mt-1 text-xs" value={config.thirdPartyRecipient} onChange={e => setConfig({...config, thirdPartyRecipient: e.target.value})} />
+                                                    </div>
+                                                    <div>
+                                                        <label className="text-[10px] font-black ml-1 text-slate-400 uppercase">제공 목적</label>
+                                                        <textarea className="w-full p-4 bg-slate-50 border border-slate-100 rounded-xl font-bold mt-1 text-xs h-20 resize-none" value={config.thirdPartyPurpose} onChange={e => setConfig({...config, thirdPartyPurpose: e.target.value})} />
+                                                    </div>
+                                                    <div>
+                                                        <label className="text-[10px] font-black ml-1 text-slate-400 uppercase">제공 항목</label>
+                                                        <input className="w-full p-4 bg-slate-50 border border-slate-100 rounded-xl font-bold mt-1 text-xs" value={config.thirdPartyItems} onChange={e => setConfig({...config, thirdPartyItems: e.target.value})} />
+                                                    </div>
+                                                </div>
                                             </div>
                                             <div className="bg-white p-8 rounded-3xl shadow-sm border border-slate-100">
-                                                <h3 className="font-black mb-6 italic flex items-center gap-2 uppercase tracking-tighter text-indigo-600"><Icon name="file-text" size={18}/> Thank You Messages</h3>
+                                                <h3 className="font-black mb-6 italic flex items-center gap-2 uppercase tracking-tighter text-indigo-600"><Icon name="file-text" size={18}/> Contract Details</h3>
+                                                <div className="space-y-4">
+                                                    <div>
+                                                        <label className="text-[10px] font-black ml-1 text-slate-400 uppercase">계약 안내 (Intro)</label>
+                                                        <textarea className="w-full p-4 bg-slate-50 border border-slate-100 rounded-xl font-bold mt-1 text-xs h-24 resize-none" value={config.contractIntro} onChange={e => setConfig({...config, contractIntro: e.target.value})} />
+                                                    </div>
+                                                    <div>
+                                                        <label className="text-[10px] font-black ml-1 text-slate-400 uppercase">보상 조건 (Reward)</label>
+                                                        <input className="w-full p-4 bg-slate-50 border border-slate-100 rounded-xl font-bold mt-1 text-xs" value={config.contractReward} onChange={e => setConfig({...config, contractReward: e.target.value})} />
+                                                    </div>
+                                                    <div>
+                                                        <label className="text-[10px] font-black ml-1 text-slate-400 uppercase">고지 사항 (Notice)</label>
+                                                        <input className="w-full p-4 bg-slate-50 border border-slate-100 rounded-xl font-bold mt-1 text-xs" value={config.contractNotice} onChange={e => setConfig({...config, contractNotice: e.target.value})} />
+                                                    </div>
+                                                </div>
+                                                <h3 className="font-black mt-10 mb-6 italic flex items-center gap-2 uppercase tracking-tighter">Thank You Messages</h3>
                                                 <div className="space-y-4 mb-10">
                                                     <div>
                                                         <label className="text-[10px] font-black ml-1 text-slate-400 uppercase">General Version (사장님용)</label>
@@ -616,14 +623,14 @@
                                                         <textarea className="w-full p-4 bg-slate-50 rounded-xl font-bold mt-1 h-24 text-xs resize-none" value={config.preQuestions} onChange={e => setConfig({...config, preQuestions: e.target.value})} />
                                                     </div>
                                                 </div>
-                                                <button onClick={handleSaveConfig} className="w-full mt-6 bg-slate-900 text-white py-4 rounded-2xl font-black text-xs uppercase shadow-xl hover:bg-black transition-all">Save All Settings</button>
+                                                <button onClick={handleSaveConfig} className="w-full mt-6 bg-slate-900 text-white py-4 rounded-2xl font-black text-xs uppercase shadow-xl hover:bg-black transition-all">Save Custom Content</button>
                                             </div>
                                         </div>
                                     )}
                                 </div>
                             ) : (
                                 <div className="flex-1 flex flex-col items-center justify-center mt-20">
-                                    <div className="w-full max-w-sm bg-white p-12 rounded-[3.5rem] shadow-2xl text-center border border-slate-50">
+                                    <div className="w-full max-sm bg-white p-12 rounded-[3.5rem] shadow-2xl text-center border border-slate-50">
                                         <h2 className="text-2xl font-black uppercase italic mb-8 tracking-tighter">Security Auth</h2>
                                         <input type="password" placeholder="Access Code" className="w-full p-5 bg-slate-50 rounded-2xl font-black text-center outline-none border-2 border-transparent focus:border-indigo-500 mb-6" value={pw} onChange={e => setPw(e.target.value)} />
                                         <button onClick={() => pw === "1234" ? setIsAdminAuth(true) : alert("비밀번호 불일치")} className="w-full bg-slate-900 text-white py-5 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl transition-all">Login</button>
