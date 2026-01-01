@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!DOCTYPE html><!DOCTYPE html>
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
@@ -196,19 +196,16 @@
                 const { collection, addDoc, serverTimestamp, getDocs } = window.FirebaseSDK;
                 
                 try {
-                    // 중복 체크 로직 반영: 동일 성명/연락처 조회
                     const leadsSnap = await getDocs(collection(window.db, 'artifacts', appId, 'public', 'data', 'leads'));
                     const userLeads = leadsSnap.docs
                         .map(d => d.data())
                         .filter(l => l.name === formData.name && l.phone === formData.phone);
 
-                    // 1. 이미 2회 신청한 경우 차단
                     if (userLeads.length >= 2) {
                         setIsLoading(false);
                         return alert("해당 정보로 이미 2회 신청이 완료되었습니다. (1인 최대 2회)");
                     }
 
-                    // 2. 이미 신청한 1건이 있고, 같은 카테고리(interest)일 경우 차단 (서로 다른 카테고리일 때만 2회 가능)
                     if (userLeads.some(l => l.interest === formData.interest)) {
                         setIsLoading(false);
                         return alert("이미 동일한 평가 항목으로 신청하신 내역이 있습니다. 다른 항목을 선택해 주세요.");
@@ -303,12 +300,13 @@
                                                 <Icon name="chevron-right" className="text-slate-200" />
                                             </div>
                                         </button>
+                                        {/* 프리미엄 텍스트 색상 수정됨 (text-white 반영) */}
                                         <button onClick={() => { setTier('premium'); setStep(1); }} className="w-full p-6 bg-slate-900 text-white rounded-3xl text-left transition-all active:scale-95 shadow-xl">
                                             <div className="flex justify-between items-start mb-4">
                                                 <div className={`p-3 ${theme.bg} text-white rounded-xl shadow-lg`}><Icon name="gem" size={24}/></div>
                                                 <span className="text-[10px] font-black text-white/30 uppercase">Premium Strategy</span>
                                             </div>
-                                            <h3 className="text-lg font-black mb-1 text-slate-900">기업 경영 전략 인덱스 보상</h3>
+                                            <h3 className="text-lg font-black mb-1 text-white">기업 경영 전략 인덱스 보상</h3>
                                             <div className="flex justify-between items-end">
                                                 <div>
                                                     <span className={`text-xl font-black text-teal-400`}>4.9만 포인트</span>
