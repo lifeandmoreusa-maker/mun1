@@ -113,7 +113,7 @@
             const [isMarketerLocked, setIsMarketerLocked] = useState(false);
 
             const [filters, setFilters] = useState({
-                merchantId: "", tier: "", isConsulted: "all", isFake: "all", isRewardPaid: "all", marketerName: "", yearMonth: ""
+                merchantId: "", tier: "", isConsulted: "all", isFake: "all", isRewardPaid: "all", isCustomerPaid: "all", marketerName: "", customerName: "", yearMonth: ""
             });
 
             const [config, setConfig] = useState({
@@ -223,8 +223,10 @@
                     const tierMatch = filters.tier === "" || l.tier === filters.tier;
                     const consultedMatch = filters.isConsulted === "all" || String(l.isConsulted) === filters.isConsulted;
                     const fakeMatch = filters.isFake === "all" || String(l.isFake) === filters.isFake;
-                    const paidMatch = filters.isRewardPaid === "all" || String(l.isRewardPaid) === filters.isRewardPaid;
+                    const hqPaidMatch = filters.isRewardPaid === "all" || String(l.isRewardPaid) === filters.isRewardPaid;
+                    const customerPaidMatch = filters.isCustomerPaid === "all" || String(l.isCustomerPaid || false) === filters.isCustomerPaid;
                     const marketerMatch = (l.marketerName || "").toLowerCase().includes(filters.marketerName.toLowerCase());
+                    const customerMatch = (l.name || "").toLowerCase().includes(filters.customerName.toLowerCase());
                     
                     let ymMatch = true;
                     if (filters.yearMonth && l.createdAt?.toDate) {
@@ -233,7 +235,7 @@
                         const m = String(date.getMonth() + 1).padStart(2, '0');
                         ymMatch = `${y}-${m}` === filters.yearMonth;
                     }
-                    return midMatch && tierMatch && consultedMatch && fakeMatch && paidMatch && marketerMatch && ymMatch;
+                    return midMatch && tierMatch && consultedMatch && fakeMatch && hqPaidMatch && customerPaidMatch && marketerMatch && customerMatch && ymMatch;
                 });
             }, [leads, filters]);
 
@@ -538,6 +540,10 @@
                                                                 <label className="text-[9px] font-black text-emerald-600 block mb-1">영업자 필터</label>
                                                                 <input className="w-full p-2 bg-emerald-50 rounded-lg text-[11px] font-bold border border-emerald-100" value={filters.marketerName} onChange={e => setFilters({...filters, marketerName: e.target.value})} placeholder="영업자명" />
                                                             </div>
+                                                            <div className="w-32">
+                                                                <label className="text-[9px] font-black text-blue-600 block mb-1">고객 필터</label>
+                                                                <input className="w-full p-2 bg-blue-50 rounded-lg text-[11px] font-bold border border-blue-100" value={filters.customerName} onChange={e => setFilters({...filters, customerName: e.target.value})} placeholder="고객명 입력" />
+                                                            </div>
                                                         </>
                                                     )}
                                                     <div className="w-40">
@@ -547,7 +553,8 @@
                                                     <div className="w-24"><label className="text-[9px] font-black text-slate-400 block mb-1">등급</label><select className="w-full p-2 bg-slate-50 rounded-lg text-[11px] font-bold border border-slate-100" value={filters.tier} onChange={e => setFilters({...filters, tier: e.target.value})}><option value="">전체</option><option value="standard">Standard</option><option value="premium">Premium</option></select></div>
                                                     <div className="w-24"><label className="text-[9px] font-black text-slate-400 block mb-1">상담여부</label><select className="w-full p-2 bg-slate-50 rounded-lg text-[11px] font-bold border border-slate-100" value={filters.isConsulted} onChange={e => setFilters({...filters, isConsulted: e.target.value})}><option value="all">전체</option><option value="true">완료</option><option value="false">대기</option></select></div>
                                                     <div className="w-24"><label className="text-[9px] font-black text-slate-400 block mb-1">허위여부</label><select className="w-full p-2 bg-slate-50 rounded-lg text-[11px] font-bold border border-slate-100" value={filters.isFake} onChange={e => setFilters({...filters, isFake: e.target.value})}><option value="all">전체</option><option value="true">허위</option><option value="false">정상</option></select></div>
-                                                    <div className="w-24"><label className="text-[9px] font-black text-slate-400 block mb-1">지급상태</label><select className="w-full p-2 bg-slate-50 rounded-lg text-[11px] font-bold border border-slate-100" value={filters.isRewardPaid} onChange={e => setFilters({...filters, isRewardPaid: e.target.value})}><option value="all">전체</option><option value="true">지급완료</option><option value="false">지급대기</option></select></div>
+                                                    <div className="w-24"><label className="text-[9px] font-black text-slate-400 block mb-1">본사지급상태</label><select className="w-full p-2 bg-slate-50 rounded-lg text-[11px] font-bold border border-slate-100" value={filters.isRewardPaid} onChange={e => setFilters({...filters, isRewardPaid: e.target.value})}><option value="all">전체</option><option value="true">지급완료</option><option value="false">지급대기</option></select></div>
+                                                    <div className="w-24"><label className="text-[9px] font-black text-slate-400 block mb-1">고객지급상태</label><select className="w-full p-2 bg-slate-50 rounded-lg text-[11px] font-bold border border-slate-100" value={filters.isCustomerPaid} onChange={e => setFilters({...filters, isCustomerPaid: e.target.value})}><option value="all">전체</option><option value="true">지급완료</option><option value="false">지급대기</option></select></div>
                                                 </div><button onClick={handleExportExcel} className="bg-slate-900 text-white px-6 py-2 rounded-xl text-[10px] font-black uppercase flex items-center gap-2 shadow-lg h-[35px] hover:bg-black transition-all"><Icon name="share" size={14}/> Excel Export</button></div>
                                             <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-100 w-full overflow-hidden">
                                                 <div className="admin-table-container">
